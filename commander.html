@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Commander — Semelles BOHFLEX | Paiement à la livraison</title>
+<meta name="description" content="Commandez vos semelles BOHFLEX en 1 minute. Livraison gratuite partout en Côte d'Ivoire, paiement à la livraison.">
+<meta name="theme-color" content="#E85D04">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_CI">
+<meta property="og:site_name" content="BOHFLEX">
+<meta property="og:title" content="Commander — Semelles BOHFLEX | Paiement à la livraison">
+<meta property="og:description" content="Commandez vos semelles BOHFLEX en 1 minute. Livraison gratuite partout en Côte d'Ivoire, paiement à la livraison.">
+<meta property="og:image" content="assets/img/og-image.png">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<meta name="robots" content="noindex">
+</head>
+<body class="page-order">
+<script src="assets/js/icons.js"></script>
+<div class="topbar">🚚 <strong>Livraison gratuite</strong> partout en Côte d'Ivoire · Paiement à la livraison</div>
+<header class="header">
+  <div class="container header__inner">
+    <a class="logo" href="index.html" aria-label="BOHFLEX — accueil">
+      <img class="logo__mark" src="assets/img/logo-mark.svg" alt="" width="30" height="30"><span>BOH<b>FLEX</b></span>
+    </a>
+    <nav class="nav" aria-label="Navigation principale"><a href="index.html">Accueil</a><a href="produit.html">Le produit</a><a href="a-propos.html">La marque</a><a href="faq.html">FAQ</a><a href="suivi.html">Suivi</a><a href="contact.html">Contact</a></nav>
+    <div class="header__actions">
+      <a class="btn btn--primary header__cta" href="commander.html">Commander</a>
+      <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Menu mobile"><a href="index.html">Accueil</a><a href="produit.html">Le produit</a><a href="a-propos.html">La marque</a><a href="faq.html">FAQ</a><a href="suivi.html">Suivi</a><a href="contact.html">Contact</a><a href="commander.html" style="color:var(--orange)">Commander maintenant →</a></nav>
+</header>
+<main>
+
+<div class="container" id="order-view">
+  <div class="order__title">
+    <h1>Finaliser ma commande</h1>
+    <p class="muted">Remplissez le formulaire, ça prend moins d'une minute.</p>
+  </div>
+  <div class="order">
+    <form id="order-form" novalidate>
+      <div class="cod-banner"><svg class="icon" aria-hidden="true"><use href="#i-cash"/></svg><div>Vous payez <span>seulement à la livraison</span>. Aucun paiement en ligne.</div></div>
+      <p class="notice" id="welcome-back" hidden>Bon retour <strong></strong> ! Vos informations ont été pré-remplies.</p>
+
+      <div class="form-step">
+        <h2 class="form-step__title"><i>1</i> Mon offre</h2>
+        <fieldset class="offer-picker"><legend class="sr-only">Choix de l'offre</legend><label class="offer-opt">
+  <input type="radio" name="offre" value="2">
+  <span class="offer-opt__box">
+    <span class="offer-opt__radio" aria-hidden="true"></span>
+    <span class="offer-opt__label"><b>2 paires</b><small data-unit="2"></small></span>
+    <span class="offer-opt__price"><b data-price="2"></b><s data-old="2"></s></span>
+  </span>
+  
+</label><label class="offer-opt">
+  <input type="radio" name="offre" value="3" checked>
+  <span class="offer-opt__box">
+    <span class="offer-opt__radio" aria-hidden="true"></span>
+    <span class="offer-opt__label"><b>3 paires</b><small data-unit="3"></small></span>
+    <span class="offer-opt__price"><b data-price="3"></b><s data-old="3"></s></span>
+  </span>
+  <span class="offer-opt__tag">Le plus avantageux</span>
+</label></fieldset>
+      </div>
+
+      <div class="form-step">
+        <h2 class="form-step__title"><i>2</i> Ma pointure</h2>
+        <div class="sizes-grid" id="sizes"></div>
+        <p class="hint small muted" style="margin-top:-4px">Une pointure par paire : vous pouvez commander pour toute la famille. La semelle se découpe ensuite à la taille exacte.</p>
+        <div class="field" id="field-color">
+          <label for="color">Coloris <span class="req">*</span></label>
+          <select class="select" id="color" name="color"><option value="">Choisir…</option></select>
+          <div class="field__error">Choisissez un coloris</div>
+        </div>
+      </div>
+
+      <div class="form-step">
+        <h2 class="form-step__title"><i>3</i> Mes informations de livraison</h2>
+        <div class="field">
+          <label for="name">Nom complet <span class="req">*</span></label>
+          <input class="input" id="name" name="name" type="text" autocomplete="name" placeholder="Ex : Aminata Koné" required>
+          <div class="field__error">Indiquez votre nom complet</div>
+        </div>
+        <div class="field">
+          <label for="phone">Téléphone / WhatsApp <span class="req">*</span></label>
+          <div class="phone-wrap">
+            <span class="phone-wrap__prefix">+225</span>
+            <input class="input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="07 00 00 00 00" required>
+          </div>
+          <div class="field__error">Numéro à 10 chiffres (ex : 07 00 00 00 00)</div>
+          <div class="hint">Le livreur vous appellera sur ce numéro.</div>
+        </div>
+        <div class="field">
+          <label for="city">Ville / Quartier <span class="req">*</span></label>
+          <input class="input" id="city" name="city" type="text" list="cities" autocomplete="address-level2" placeholder="Ex : Abidjan - Yopougon Niangon" required>
+          <datalist id="cities"><option value="Abidjan - Cocody"><option value="Abidjan - Yopougon"><option value="Abidjan - Abobo"><option value="Abidjan - Adjamé"><option value="Abidjan - Plateau"><option value="Abidjan - Marcory"><option value="Abidjan - Koumassi"><option value="Abidjan - Treichville"><option value="Abidjan - Port-Bouët"><option value="Abidjan - Attécoubé"><option value="Abidjan - Riviera"><option value="Abidjan - Angré"><option value="Bingerville"><option value="Anyama"><option value="Songon"><option value="Grand-Bassam"><option value="Bouaké"><option value="Yamoussoukro"><option value="San-Pédro"><option value="Daloa"><option value="Korhogo"><option value="Man"><option value="Gagnoa"><option value="Abengourou"><option value="Divo"><option value="Soubré"><option value="Agboville"><option value="Dabou"><option value="Bondoukou"><option value="Odienné"></datalist>
+          <div class="field__error">Indiquez votre ville ou quartier</div>
+        </div>
+        <div class="field">
+          <label for="address">Adresse précise / point de repère <span class="req">*</span></label>
+          <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : derrière la pharmacie, près du carrefour…" required>
+          <div class="field__error">Donnez un point de repère pour le livreur</div>
+        </div>
+        <div class="field">
+          <label for="notes">Remarques <span class="muted small">(optionnel)</span></label>
+          <textarea class="textarea" id="notes" name="notes" placeholder="Ex : livrer après 17h, appeler avant de passer…"></textarea>
+        </div>
+      </div>
+
+      <button class="btn btn--primary btn--block" type="submit">Valider ma commande · <span id="submit-total"></span></button>
+      <p class="center small muted" style="margin-top:10px">💵 Vous payez seulement à la livraison · 🚚 Livraison gratuite</p>
+    </form>
+
+    <aside class="card summary" aria-label="Résumé de la commande">
+      <h2>Ma commande</h2>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+        <img src="assets/img/semelle.svg" alt="" width="72" height="72" style="background:var(--orange-light);border-radius:12px">
+        <div><strong>Semelles Confort BOHFLEX</strong><div class="muted small" id="sum-offer"></div></div>
+      </div>
+      <div class="summary__row"><span>Prix normal</span><s class="muted" id="sum-old"></s></div>
+      <div class="summary__row"><span>Prix de l'offre</span><strong id="sum-price"></strong></div>
+      <div class="summary__row"><span>Livraison</span><span class="free">Gratuite</span></div>
+      <div class="summary__total"><span>À payer à la livraison</span><b id="sum-total"></b></div>
+      <ul class="trust-row">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-cash"/></svg> Paiement en espèces au livreur</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg> Appel de confirmation avant livraison</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> Satisfait ou remboursé</li>
+      </ul>
+    </aside>
+  </div>
+</div>
+
+<div class="container" id="order-success" hidden>
+  <div class="success">
+    <div class="success__icon"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></div>
+    <h1>Merci pour votre commande !</h1>
+    <p>Référence : <strong id="success-ref"></strong></p>
+    <p class="muted">Votre message a été préparé sur WhatsApp. <strong>Pensez à appuyer sur « Envoyer »</strong> pour que notre équipe confirme votre commande. Le livreur vous appellera avant de passer.</p>
+    <p><a class="btn btn--wa" id="success-wa" href="#" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Rouvrir WhatsApp</a></p>
+    <p><a href="index.html">← Retour à l'accueil</a></p>
+  </div>
+</div>
+
+<div class="modal" id="recap-modal" role="dialog" aria-modal="true" aria-labelledby="recap-title">
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__panel">
+    <button class="modal__close" type="button" data-close aria-label="Fermer">×</button>
+    <h2 id="recap-title">Vérifiez votre commande</h2>
+    <div class="recap"><dl id="recap-list"></dl></div>
+    <p class="small muted">En cliquant ci-dessous, WhatsApp s'ouvre avec votre commande pré-remplie. Il vous suffit d'appuyer sur <strong>Envoyer</strong>.</p>
+    <div class="modal__actions">
+      <a class="btn btn--wa btn--block" id="wa-confirm" href="#" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Confirmer sur WhatsApp</a>
+      <button class="btn btn--outline btn--block" type="button" data-close>Modifier</button>
+    </div>
+  </div>
+</div>
+
+</main>
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <a class="logo" href="index.html"><img class="logo__mark" src="assets/img/logo-mark.svg" alt="" width="30" height="30"><span>BOH<b>FLEX</b></span></a>
+        <p>Semelles massantes de confort pour celles et ceux qui restent debout toute la journée. Livraison gratuite partout en Côte d'Ivoire, paiement à la livraison.</p>
+        <div class="socials">
+          <a href="#" aria-label="Facebook"><svg class="icon" aria-hidden="true"><use href="#i-facebook"/></svg></a>
+          <a href="#" aria-label="Instagram"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg></a>
+          <a href="#" aria-label="TikTok"><svg class="icon" aria-hidden="true"><use href="#i-tiktok"/></svg></a>
+          <a href="#" data-wa aria-label="WhatsApp"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <h4>Boutique</h4>
+        <ul>
+          <li><a href="produit.html">Semelles Confort</a></li>
+          <li><a href="commander.html?offre=2">Offre 2 paires</a></li>
+          <li><a href="commander.html?offre=3">Offre 3 paires</a></li>
+          <li><a href="suivi.html">Suivre ma commande</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Aide</h4>
+        <ul>
+          <li><a href="faq.html">Questions fréquentes</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="a-propos.html">La marque</a></li>
+          <li><a href="mentions-legales.html">Mentions légales &amp; CGV</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Nous joindre</h4>
+        <ul>
+          <li><a href="#" data-wa>WhatsApp</a></li>
+          <li><a href="#" data-phone></a></li>
+          <li>Abidjan, Côte d'Ivoire</li>
+          <li><button class="btn btn--outline" type="button" data-install style="color:#fff;border-color:#555;min-height:40px;padding:8px 14px;font-size:1rem;margin-top:6px"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg> Installer l'app</button></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">© <span data-year></span> BOHFLEX — Tous droits réservés. Produit de confort, ne remplace pas un avis médical.</div>
+  </div>
+</footer>
+<div class="sticky-cta">
+  <div class="sticky-cta__price">À partir de<b id="sticky-price" data-price="2"></b></div>
+  <a class="btn btn--primary" href="commander.html?offre=3" data-order-link>Commander</a>
+  <a class="btn btn--wa" href="#" data-wa aria-label="Écrire sur WhatsApp"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></a>
+</div>
+<div class="install-banner" id="install-banner" role="dialog" aria-label="Installer l'application">
+  <img src="assets/img/logo-mark.svg" alt="" width="36" height="36">
+  <p><strong>Installez l'app BOHFLEX</strong><br>Commandez en 1 clic depuis votre écran d'accueil.</p>
+  <button class="btn btn--primary" type="button" data-install>Installer</button>
+  <button class="close" type="button" aria-label="Fermer">×</button>
+</div>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
