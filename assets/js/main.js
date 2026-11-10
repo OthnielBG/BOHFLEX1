@@ -312,6 +312,19 @@
     $$("[data-close]", modal).forEach(function (b) { b.addEventListener("click", closeModal); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
 
+    // Envoie la commande à l'application de gestion (Supabase)
+    function sendToApp(o) {
+      if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) return;
+      var p = Object.assign({}, o, { sizes: o.sizes.join(", "), univers: CFG.univers || "bienetre" });
+      try {
+        fetch(CFG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/rpc/site_order", {
+          method: "POST", keepalive: true,
+          headers: { "Content-Type": "application/json", apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey },
+          body: JSON.stringify({ p: p })
+        }).catch(function () {});
+      } catch (e) { /* on ne bloque jamais la commande */ }
+    }
+
     function sendToWebhook(o) {
       if (!CFG.orderWebhookUrl) return;
       var payload = JSON.stringify(Object.assign({}, o, { sizes: o.sizes.join(", ") }));
@@ -333,6 +346,7 @@
 
     $("#wa-confirm").addEventListener("click", function () {
       if (!current) return;
+      sendToApp(current);
       sendToWebhook(current);
       store(STORAGE_KEY, { name: current.name, phone: current.phone, city: current.city, address: current.address });
       track("Purchase", { currency: "XOF", value: current.price, num_items: current.pairs });

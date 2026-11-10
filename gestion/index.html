@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BOLOU and CO — Gestion</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#16130F">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="root"><div class="boot">Chargement…</div></div>
+
+<dialog id="modal">
+  <div class="modal">
+    <header class="modal__head"><h2 id="modal-title"></h2><button type="button" class="x" id="modal-x" aria-label="Fermer">×</button></header>
+    <div class="modal__body" id="modal-body"></div>
+    <footer class="modal__foot" id="modal-foot"></footer>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

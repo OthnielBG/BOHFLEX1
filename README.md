@@ -37,6 +37,12 @@ Tous les réglages sont dans ce fichier :
 - `deliveredCount` : compteur « déjà X clients livrés », **à remplacer par un chiffre réel**
 - `showReviewMarkers` : **mettre `false` avant la mise en ligne** (voir ci-dessous)
 
+- `supabaseUrl`, `supabaseAnonKey`, `univers` : envoient chaque commande dans l'application de gestion (voir ci-dessous)
+
+## Application de gestion (BOLOU and CO)
+
+Le dossier [`gestion/`](gestion/) contient l'application interne : commandes, prospects, stock, livreurs, finances, avec des comptes pour toute l'équipe. Elle est en ligne à l'adresse `/gestion/` du site. Installation et mode d'emploi : [`gestion/README.md`](gestion/README.md).
+
 ## Textes santé [À VALIDER]
 
 Les formulations santé du cahier des charges portent la classe CSS `av`. Tant que `showReviewMarkers: true`, elles sont **encadrées en violet avec l'étiquette « À VALIDER »**, ce qui permet de les repérer d'un coup d'œil. Pour toutes les retrouver dans le code : `grep -n 'class="[^"]*av' *.html`.
@@ -76,4 +82,4 @@ Les fichiers HTML sont générés par `tools/build_pages.py`, qui contient l'en-
 
 ## Hors périmètre v1 (prévu)
 
-Paiement Mobile Money (Wave, Orange Money, MTN, Moov), compte client, fidélité et relances, multi-langue, gestion du stock, apps dans les stores, suivi de commande automatique.
+Paiement Mobile Money (Wave, Orange Money, MTN, Moov), compte client, fidélité, multi-langue, apps dans les stores, suivi de commande automatique. (Le stock, les commandes et les relances sont gérés dans l'application `gestion/`.)
