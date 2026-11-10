@@ -928,7 +928,7 @@
     if (can("gerant")) {
       var offers = S.offers.filter(function (x) { return S.uni === "all" || x.univers === S.uni; });
       html += '<div class="section-title"><h2>Offres / packs</h2><button class="btn btn--sm" id="new-offer">+ Offre</button></div>' +
-        (offers.length ? '<div class="card"><table class="t"><thead><tr><th>Offre</th><th>Univers</th><th class="num">Quantité</th><th class="num">Prix</th><th></th></tr></thead><tbody>' +
+        (offers.length ? '<div class="card scroll-x"><table class="t"><thead><tr><th>Offre</th><th>Univers</th><th class="num">Quantité</th><th class="num">Prix</th><th></th></tr></thead><tbody>' +
           offers.map(function (x) {
             return "<tr" + (x.active ? "" : ' style="opacity:.5"') + "><td>" + esc(x.name) + "</td><td>" + esc(UNI_SHORT[x.univers]) + '</td><td class="num">' + x.qty + '</td><td class="num">' + money(x.price) +
               '</td><td class="right"><button class="btn btn--sm" data-offer="' + x.id + '">Modifier</button></td></tr>';
