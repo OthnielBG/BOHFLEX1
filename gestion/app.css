@@ -216,6 +216,15 @@ legend { font-size: .78rem; font-weight: 700; color: var(--brand); padding: 0 6p
 .chip.is-on small { color: #C9D5EE; }
 .chip.is-out:not(.is-on) { border-style: dashed; color: var(--muted); }
 
+/* Choix d'un modèle par photo (sacoches) */
+.pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.pick__item { position: relative; border: 1.5px solid var(--line); background: #fff; border-radius: 12px; padding: 6px 6px 8px; cursor: pointer; text-align: center; display: grid; gap: 2px; font-size: .8rem; color: var(--ink); }
+.pick__item .thumb { width: 100%; height: auto; aspect-ratio: 1; border-radius: 9px; margin-bottom: 4px; }
+.pick__item b { font-size: .82rem; line-height: 1.2; }
+.pick__item small { color: var(--muted); font-size: .7rem; }
+.pick__item.is-on { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand) inset; }
+.pick__n { position: absolute; top: 4px; right: 4px; background: var(--brand); color: #fff; font-weight: 800; font-size: .78rem; min-width: 24px; height: 24px; border-radius: 12px; display: grid; place-items: center; }
+
 /* ---------- Cartes de commande / contact ---------- */
 .list { display: grid; gap: 10px; }
 @media (min-width: 1100px) { .list--2 { grid-template-columns: 1fr 1fr; } }

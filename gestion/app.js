@@ -212,6 +212,15 @@
     uni: store("uni") || "all", view: null, refresh: null, modalOpen: false, vs: {}, badges: {}
   };
   function role() { return S.me && S.me.active ? S.me.role : null; }
+  // Closeuse dédiée à une seule activité (sacoches ou semelles) : tout est filtré sur celle-ci
+  function lockedUni() { return role() === "closeuse" && S.me.univers ? S.me.univers : null; }
+  function defaultUni() { return lockedUni() || (S.uni !== "all" ? S.uni : (store("lastUni") || "bienetre")); }
+  function uniPicker(name, current) {
+    if (lockedUni()) return '<input type="radio" name="' + name + '" value="' + lockedUni() + '" checked hidden>';
+    return '<div class="seg">' + ["bienetre", "passion"].map(function (u) {
+      return '<label><input type="radio" name="' + name + '" value="' + u + '"' + (current === u ? " checked" : "") + '><span><span><span class="dot dot--' + u + '"></span>' + UNI[u] + "</span></span></label>";
+    }).join("") + "</div>";
+  }
   function can() { var r = role(); return Array.prototype.indexOf.call(arguments, r) >= 0; }
   function vstate(view, defaults) { S.vs[view] = S.vs[view] || Object.assign({}, defaults); return S.vs[view]; }
 
@@ -221,7 +230,7 @@
       var m = res.error.message || "Erreur";
       if (/JWT|token/i.test(m)) m = "Session expirée : reconnectez-vous.";
       if (/Failed to fetch|NetworkError/i.test(m)) m = "Pas de connexion internet.";
-      if (/image_url/.test(m)) m = "Photos pas encore activées : exécutez le fichier maj-02-photos.sql dans Supabase.";
+      if (/image_url|univers|set_member|my_univers/.test(m)) m = "Base à mettre à jour : exécutez le fichier maj-03.sql dans Supabase (SQL Editor).";
       throw new Error(m);
     }
     return res.data;
@@ -234,7 +243,7 @@
       q(S.sb.from("variants").select("*").order("sort").order("label")),
       q(S.sb.from("offers").select("*").order("qty")),
       q(S.sb.from("brands").select("*")),
-      q(S.sb.from("profiles").select("id, email, full_name, phone, role, active, created_at").order("created_at"))
+      q(S.sb.from("profiles").select("*").order("created_at"))
     ]);
     S.products = r[0]; S.variants = r[1]; S.offers = r[2]; S.members = r[4];
     S.brands = {}; r[3].forEach(function (b) { S.brands[b.univers] = b; });
@@ -249,9 +258,11 @@
   function memberName(id) { var m = member(id); return m ? (m.full_name || m.email) : ""; }
   function couriers() { return S.members.filter(function (m) { return m.role === "livreur" && m.active; }); }
   function brandName(u) { return (S.brands[u] && S.brands[u].name) || UNI[u] || APP; }
+  function singleVariant(pid) { return S.variants.filter(function (v) { return v.product_id === pid; }).length === 1; }
   function variantName(id, withProduct) {
     var v = variant(id); if (!v) return "?";
     var p = product(v.product_id);
+    if (p && singleVariant(p.id)) return p.name;
     return (withProduct !== false && p ? p.name + " " : "") + v.label;
   }
   function variantImage(id) { var v = variant(id); if (!v) return ""; var p = product(v.product_id); return v.image_url || (p && p.image_url) || ""; }
@@ -337,10 +348,10 @@
       '<div class="app">' +
       '<aside class="side"><div class="side__brand"><img src="' + LOGO + '" alt=""><div><b>' + brandHtml() + '</b><small>GESTION</small></div></div>' +
       "<nav>" + views.map(navLink).join("") + "</nav>" +
-      '<div class="side__foot">' + esc(S.me.full_name || S.me.email) + "<br><small>" + esc(ROLES[S.me.role] || "") +
+      '<div class="side__foot">' + esc(S.me.full_name || S.me.email) + "<br><small>" + esc((ROLES[S.me.role] || "") + (lockedUni() ? " · " + UNI[lockedUni()] : "")) +
       '</small><br><button type="button" id="logout">' + ico("logout", "i--sm") + "Se déconnecter</button></div></aside>" +
       '<header class="topbar"><img src="' + LOGO + '" alt=""><b>' + brandHtml() + '</b><span class="sp"></span><span class="who">' +
-      esc(firstName(S.me.full_name) || S.me.email) + "<br>" + esc(ROLES[S.me.role] || "") + "</span></header>" +
+      esc(firstName(S.me.full_name) || S.me.email) + "<br>" + esc((ROLES[S.me.role] || "") + (lockedUni() ? " · " + UNI[lockedUni()] : "")) + "</span></header>" +
       '<main class="main" id="view" tabindex="-1"></main>' +
       '<nav class="tabbar" aria-label="Navigation">' + tabs.map(navLink).join("") +
       (views.length > 5 ? '<button type="button" id="more-btn">' + ico("grid") + "<span>Plus</span></button>" : "") + "</nav>" +
@@ -396,6 +407,7 @@
   }
 
   function uniSwitch() {
+    if (lockedUni()) return '<span class="pill pill--' + lockedUni() + '" style="font-size:.78rem;padding:6px 12px"><span class="dot dot--' + lockedUni() + '"></span>&nbsp;' + UNI[lockedUni()] + "</span>";
     return '<div class="uni" role="group" aria-label="Activité">' +
       [["all", "Tout", ""], ["passion", "Sacoches", "passion"], ["bienetre", "Semelles", "bienetre"]].map(function (u) {
         return '<button type="button" data-u="' + u[0] + '" class="' + (S.uni === u[0] ? "is-on" : "") + '">' + (u[2] ? '<span class="dot dot--' + u[2] + '"></span>' : "") + u[1] + "</button>";
@@ -742,7 +754,7 @@
   // Formulaire de commande (création / modification)
   function orderForm(o, prefill) {
     o = o || null;
-    var d = o || Object.assign({ univers: S.uni !== "all" ? S.uni : (store("lastUni") || "bienetre"), source: "whatsapp", mode: "abidjan", order_items: [] }, prefill || {});
+    var d = o || Object.assign({ univers: defaultUni(), source: "whatsapp", mode: "abidjan", order_items: [] }, prefill || {});
     var lines = (d.order_items || []).map(function (i) { var v = variant(i.variant_id); return { product_id: v ? v.product_id : "", variant_id: i.variant_id, qty: i.qty, unit_price: i.unit_price }; });
     var totalManual = !!o;
 
@@ -750,10 +762,7 @@
       (o ? "" : '<button type="button" class="btn btn--block" id="paste-btn">' + ico("paste") + "Coller un message WhatsApp</button>" +
         '<div id="paste-box" hidden><label class="f">Collez le message du client ou la commande reçue du site<textarea id="paste-txt" placeholder="Bonjour BOHFLEX ! Je souhaite commander : Offre : 3 paires…"></textarea></label>' +
         '<button type="button" class="btn btn--primary btn--block" id="paste-go" style="margin-top:8px">' + ico("check") + "Remplir la commande</button></div>") +
-      '<div id="dup-note"></div>' +
-      '<div class="seg">' + ["bienetre", "passion"].map(function (u) {
-        return '<label><input type="radio" name="univers" value="' + u + '"' + (d.univers === u ? " checked" : "") + '><span><span><span class="dot dot--' + u + '"></span> ' + UNI[u] + "</span></span></label>";
-      }).join("") + "</div>" +
+      '<div id="dup-note"></div>' + uniPicker("univers", d.univers) +
       '<div class="row"><label class="f">Téléphone *<input name="phone" inputmode="tel" value="' + esc(d.phone ? fphone(d.phone) : "") + '" placeholder="07 00 00 00 00" autocomplete="off"></label>' +
       '<label class="f">Nom du client<input name="customer_name" value="' + esc(d.customer_name || "") + '" autocomplete="off"></label></div>' +
       '<div class="row"><label class="f">Ville / commune<input name="city" value="' + esc(d.city || "") + '"></label>' +
@@ -787,11 +796,30 @@
     function renderOffers() {
       var offers = S.offers.filter(function (x) { return x.univers === uni() && x.active; });
       var box = $("#offer-box");
-      if (!offers.length) { box.innerHTML = ""; return; }
+      if (!offers.length) { renderPicker(box); return; }
       box.innerHTML = '<div class="seg" style="margin-bottom:12px">' + offers.map(function (x) {
         return '<label><input type="radio" name="offer_id" value="' + x.id + '"' + (d.offer_id === x.id ? " checked" : "") + "><span>" + esc(x.name) + "<small>" + money(x.price) + "</small></span></label>";
       }).join("") + '<label><input type="radio" name="offer_id" value=""' + (!d.offer_id ? " checked" : "") + "><span>Autre<small>au détail</small></span></label></div>";
       $$("input[name=offer_id]", box).forEach(function (r) { r.addEventListener("change", function () { applyOffer(r.value); }); });
+    }
+    function renderPicker(box) {
+      var prods = uniProducts().filter(function (p) { return p.active; });
+      box.innerHTML = '<div class="pick">' + prods.map(function (p) {
+        var vs = productVariants(p.id), stock = vs.reduce(function (s, v) { return s + Math.max(v.stock, 0); }, 0);
+        var n = lines.filter(function (l) { return l.product_id === p.id; }).reduce(function (s, l) { return s + (l.qty || 0); }, 0);
+        return '<button type="button" class="pick__item' + (n ? " is-on" : "") + '" data-pick="' + p.id + '">' + thumb(p.image_url, p.univers) +
+          "<b>" + esc(p.name.replace(/^Sacoche\s+/i, "")) + "</b><small>" + money(p.sale_price) + " · " + (stock > 0 ? "stock " + stock : "rupture") + "</small>" +
+          (n ? '<span class="pick__n">' + n + "</span>" : "") + "</button>";
+      }).join("") + "</div>";
+      $$("[data-pick]", box).forEach(function (b) {
+        b.addEventListener("click", function () {
+          var pid = b.getAttribute("data-pick"), vs = productVariants(pid), p = product(pid);
+          var same = vs.length === 1 && lines.find(function (l) { return l.product_id === pid; });
+          if (same) same.qty = (same.qty || 0) + 1;
+          else lines.push({ product_id: pid, variant_id: vs.length === 1 ? vs[0].id : "", qty: 1, unit_price: p.sale_price });
+          renderLines(); autoTotal();
+        });
+      });
     }
     function applyOffer(id, sizes) {
       d.offer_id = id;
@@ -819,17 +847,19 @@
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' + thumb(img, uni(), "", 40) +
           '<b style="flex:1">' + word + " " + (i + 1) + (l.variant_id ? ' <span class="muted" style="font-weight:500">· ' + esc(variantName(l.variant_id, prods.length > 1)) + "</span>" : "") + "</b>" +
           (offer ? "" : '<button type="button" class="x" data-del aria-label="Retirer">' + ico("x", "i--sm") + "</button>") + "</div>" +
-          (prods.length > 1 || !l.product_id ? '<select data-k="product_id" style="margin-bottom:8px"><option value="">— Choisir le modèle —</option>' + prods.map(function (p) {
+          (!l.product_id ? '<select data-k="product_id" style="margin-bottom:8px"><option value="">— Choisir le modèle —</option>' + prods.map(function (p) {
             return '<option value="' + p.id + '"' + (p.id === l.product_id ? " selected" : "") + ">" + esc(p.name) + "</option>";
           }).join("") + "</select>" : "") +
-          (vs.length ? '<div class="chips">' + vs.map(function (v) {
+          (vs.length > 1 ? '<div class="chips">' + vs.map(function (v) {
             return '<button type="button" class="chip' + (v.id === l.variant_id ? " is-on" : "") + (v.stock <= 0 ? " is-out" : "") + '" data-v="' + v.id + '">' + esc(v.label) + "<small>" + (v.stock <= 0 ? "rupture" : "stock " + v.stock) + "</small></button>";
           }).join("") + "</div>" : "") +
           (offer ? "" : '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><label class="f">Quantité<input data-k="qty" inputmode="numeric" value="' + l.qty + '"></label>' +
             '<label class="f">Prix unitaire<input data-k="unit_price" inputmode="numeric" value="' + l.unit_price + '"></label></div>') +
           "</div>";
-      }).join("") || '<p class="muted small" style="margin:0">' + (S.offers.some(function (x) { return x.univers === uni() && x.active; }) ? "Choisissez une offre ci-dessus." : "Ajoutez un article.") + "</p>";
-      $("#add-line").hidden = !!offer;
+      }).join("") || '<p class="muted small" style="margin:0">' + (S.offers.some(function (x) { return x.univers === uni() && x.active; }) ? "Choisissez une offre ci-dessus." : "Touchez un modèle ci-dessus pour l'ajouter.") + "</p>";
+      var hasOffers = S.offers.some(function (x) { return x.univers === uni() && x.active; });
+      $("#add-line").hidden = !!offer || !hasOffers;
+      if (!hasOffers) renderPicker($("#offer-box"));
       $$("#lines .line").forEach(function (row) {
         var i = +row.getAttribute("data-i");
         var ps = $("[data-k=product_id]", row);
@@ -860,7 +890,7 @@
     async function applyPaste() {
       var txt = $("#paste-txt").value, r = parseWA(txt);
       if (!r.phone && !r.name) { toast("Je n'ai trouvé ni numéro ni nom dans ce message", "err"); return; }
-      if (r.pairs || r.sizes.length) { var radio = $("#of input[name=univers][value=bienetre]"); if (radio && !radio.checked) { radio.checked = true; onUni(); } }
+      if ((r.pairs || r.sizes.length) && !lockedUni()) { var radio = $("#of input[name=univers][value=bienetre]"); if (radio && !radio.checked) { radio.checked = true; onUni(); } }
       if (r.phone) $("#of [name=phone]").value = fphone(r.phone);
       if (r.name) $("#of [name=customer_name]").value = r.name;
       if (r.city) $("#of [name=city]").value = r.city;
@@ -1054,11 +1084,8 @@
   }
 
   function contactForm(c) {
-    var d = c || { univers: S.uni !== "all" ? S.uni : (store("lastUni") || "bienetre"), stage: "nouveau", source: "whatsapp", next_followup: addDays(today(), 1) };
-    var body = '<form class="form" id="cf" novalidate>' +
-      '<div class="seg">' + ["bienetre", "passion"].map(function (u) {
-        return '<label><input type="radio" name="univers" value="' + u + '"' + (d.univers === u ? " checked" : "") + '><span><span><span class="dot dot--' + u + '"></span> ' + UNI[u] + "</span></span></label>";
-      }).join("") + "</div>" +
+    var d = c || { univers: defaultUni(), stage: "nouveau", source: "whatsapp", next_followup: addDays(today(), 1) };
+    var body = '<form class="form" id="cf" novalidate>' + uniPicker("univers", d.univers) +
       '<div class="row"><label class="f">Téléphone *<input name="phone" inputmode="tel" value="' + esc(d.phone ? fphone(d.phone) : "") + '"></label>' +
       '<label class="f">Nom<input name="name" value="' + esc(d.name || "") + '"></label></div>' +
       '<div class="row"><label class="f">Ville / commune<input name="city" value="' + esc(d.city || "") + '"></label>' +
@@ -1225,7 +1252,7 @@
     var res = await S.sb.storage.from("produits").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
     if (res.error) {
       var m = res.error.message || "";
-      if (/bucket|not found|row-level|policy|unauthorized/i.test(m)) throw new Error("Photos pas encore activées : exécutez le fichier maj-02-photos.sql dans Supabase.");
+      if (/bucket|not found|row-level|policy|unauthorized/i.test(m)) throw new Error("Photos pas encore activées : exécutez le fichier maj-03.sql dans Supabase.");
       throw new Error(m);
     }
     return S.sb.storage.from("produits").getPublicUrl(path).data.publicUrl + "?v=" + Date.now();
@@ -1245,7 +1272,7 @@
     var newMain = null, newVar = {};
     var body = '<form class="form" id="pf" novalidate>' +
       (p ? "" : '<div class="seg">' + ["passion", "bienetre"].map(function (u) {
-        return '<label><input type="radio" name="univers" value="' + u + '"' + (d.univers === u ? " checked" : "") + '><span><span><span class="dot dot--' + u + '"></span> ' + UNI[u] + "</span></span></label>";
+        return '<label><input type="radio" name="univers" value="' + u + '"' + (d.univers === u ? " checked" : "") + '><span><span><span class="dot dot--' + u + '"></span>' + UNI[u] + "</span></span></label>";
       }).join("") + "</div>") +
       '<div class="upload"><span id="pimg-prev">' + thumb(d.image_url, d.univers, "", 72) + '</span><div><label class="btn btn--sm" for="pimg">' + ico("camera", "i--sm") + (d.image_url ? "Changer la photo" : "Ajouter une photo") +
       '</label><input type="file" id="pimg" accept="image/*"><div class="muted small" style="margin-top:4px">Photo carrée de préférence, sur fond clair</div></div></div>' +
@@ -1586,11 +1613,12 @@
         return '<div data-m="' + m.id + '" style="display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px">' +
           '<div class="thumb thumb--round" style="width:42px;height:42px">' + esc(initials(m.full_name || m.email)) + "</div>" +
           '<div style="min-width:0"><b>' + esc(m.full_name || "—") + '</b> <span class="muted small">' + esc(m.email) + "</span>" +
-          '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap"><select data-k="role" style="flex:1;min-width:150px">' + opts(ROLES, m.role, "— Aucun rôle —") + "</select>" +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap"><select data-k="role" style="flex:1;min-width:150px" aria-label="Rôle">' + opts(ROLES, m.role, "— Aucun rôle —") + "</select>" +
+          '<select data-k="univers" style="flex:1;min-width:150px" aria-label="Activité" title="Activité de la closeuse"' + (m.role === "closeuse" ? "" : " hidden") + ">" + opts({ passion: "Sacoches uniquement", bienetre: "Semelles uniquement" }, m.univers || "", "Les deux activités") + "</select>" +
           '<label class="check"><input type="checkbox" data-k="active"' + (m.active ? " checked" : "") + "> Actif</label>" +
           '<button class="btn btn--sm btn--primary" data-save>' + ico("check", "i--sm") + "OK</button></div></div></div>";
       }).join("") + "</div>" +
-      '<p class="muted small" style="margin-top:10px">Closeuse : commandes et prospects, sans coûts ni finances. Livreur : uniquement ses livraisons. Stock : produits et entrées de stock.</p></div>';
+      '<p class="muted small" style="margin-top:10px">Closeuse : commandes et prospects de son activité (ou des deux), sans coûts ni finances. Livreur : uniquement ses livraisons. Stock : produits et entrées de stock.</p></div>';
 
     html += '<div class="card"><h2 style="margin-bottom:10px">Marques</h2><form class="form" id="bf">' + ["bienetre", "passion"].map(function (u) {
       var b = S.brands[u] || {};
@@ -1604,10 +1632,12 @@
       '<pre class="small" style="white-space:pre-wrap;word-break:break-all;background:var(--brand-soft);padding:10px;border-radius:10px">supabaseUrl: "' + esc(CFG.supabaseUrl) + '",\nsupabaseAnonKey: "' + esc(CFG.supabaseAnonKey) + '",\nunivers: "bienetre"   // "passion" pour le site des sacoches</pre></div>';
     el.innerHTML = html;
     $$("[data-m]", el).forEach(function (tr) {
+      $("[data-k=role]", tr).addEventListener("change", function (e) { $("[data-k=univers]", tr).hidden = e.target.value !== "closeuse"; });
       $("[data-save]", tr).addEventListener("click", async function () {
         var roleV = $("[data-k=role]", tr).value || null, active = $("[data-k=active]", tr).checked;
+        var uniV = roleV === "closeuse" ? ($("[data-k=univers]", tr).value || null) : null;
         if (active && !roleV) { toast("Choisissez un rôle avant d'activer", "err"); return; }
-        try { await q(S.sb.rpc("set_member", { p_user: tr.getAttribute("data-m"), p_role: roleV, p_active: active })); } catch (e) { return fail(e); }
+        try { await q(S.sb.rpc("set_member", { p_user: tr.getAttribute("data-m"), p_role: roleV, p_active: active, p_univers: uniV })); } catch (e) { return fail(e); }
         toast("Membre mis à jour", "ok"); vSettings(el).catch(fail);
       });
     });
@@ -1743,6 +1773,7 @@
       return;
     }
     if (!S.me.active || !S.me.role) { pendingScreen(); return; }
+    if (lockedUni()) S.uni = lockedUni();
     try { await loadRefs(); } catch (e) { fail(e); }
     shell(); route(); realtime();
   }

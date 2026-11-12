@@ -84,15 +84,27 @@ Ouvrez ensuite http://localhost:8000/gestion/ (pensez à ajouter cette adresse d
 
 Pour retirer l'accès à quelqu'un, décochez **Actif**.
 
-### 6 bis. Activer les photos des produits (mise à jour n°2)
+### 6 bis. Mise à jour n°3 : photos, closeuse par activité, catalogue sacoches
 
-Si vous avez installé l'application avant l'arrivée des photos, exécutez une fois [`supabase/maj-02-photos.sql`](supabase/maj-02-photos.sql) dans **SQL Editor** (coller, puis **Run**). Pour une nouvelle installation, il est déjà inclus dans `schema.sql`.
+Si l'application était déjà installée avant cette mise à jour, ouvrez **SQL Editor**, puis **New query**. Collez tout le fichier [`supabase/maj-03.sql`](supabase/maj-03.sql) et cliquez sur **Run**. Ce fichier :
+- active les photos ;
+- permet de réserver une closeuse à une activité ;
+- crée les 5 sacoches avec leur photo et leur prix.
+
+Pour une nouvelle installation, tout cela est déjà inclus dans `schema.sql`. Le fichier `maj-02-photos.sql` n'est plus à utiliser.
+
+**Une closeuse par activité** : dans **Équipe**, choisissez le rôle « Closeuse », puis son activité :
+- **Sacoches uniquement** ;
+- **Semelles uniquement** ;
+- **Les deux activités**.
+
+Une closeuse réservée à une activité ne voit que les commandes, les prospects et les relances de cette activité. La base de données le garantit elle-même. Ses formulaires sont pré-réglés sur son activité.
 
 ### 7. Ajouter vos produits
 
 - **Semelles** : le produit « Semelle BOHFLEX » est déjà créé, avec les pointures 35/36 à 45/46 et les offres **2 paires (6 500 F)** et **3 paires (7 500 F)**. Dans **Stock** puis **Modifier**, indiquez le **coût d'achat** d'une paire.
 - **Photos** : dans **Stock**, ouvrez un produit avec le bouton crayon, puis **Ajouter une photo**. Pour les sacoches, touchez la vignette de chaque couleur pour lui donner sa propre photo. Les photos apparaissent ensuite sur chaque commande. Elles sont réduites automatiquement avant l'envoi, ce qui les rend légères en 3G.
-- **Sacoches** : dans **Stock**, cliquez sur **+ Produit** pour chaque modèle (par exemple « Sacoche bandoulière cuir »), avec son prix de vente, son coût d'achat et ses couleurs (une par ligne).
+- **Sacoches** : les 5 modèles (Tommy Hilfiger, Zara, Lacoste à 15 000 F ; Ranger antivol et Milan à 12 500 F) sont créés par la mise à jour n°3, en couleur unique. Indiquez leur **coût d'achat** et leur stock. Pour un nouveau modèle, dans **Stock**, cliquez sur **+ Produit** pour chaque modèle (par exemple « Sacoche bandoulière cuir »), avec son prix de vente, son coût d'achat et ses couleurs (une par ligne).
 - Ajoutez ensuite les quantités réelles avec **+ Entrée de stock**.
 
 > **Coût d'achat** = prix fournisseur + transport + douane, divisé par le nombre de pièces. C'est lui qui permet de calculer votre vrai bénéfice.
