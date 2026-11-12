@@ -1,6 +1,6 @@
 # BOLOU and CO — Identité visuelle
 
-Le logo représente un **sac de courses** (l'e-commerce) qui porte le **B** de BOLOU. L'**anse dorée** et le trait sous « AND CO » forment la touche de couleur de la marque.
+Le logo représente un **sac de courses** (l'e-commerce) portant le **B** de BOLOU, posé dans un carré bleu arrondi. Il est accompagné du nom « **BOLOU** AND CO » et de la mention « E-COMMERCE & MULTI-VENTES ».
 
 ## Fichiers
 
@@ -9,8 +9,10 @@ Le logo représente un **sac de courses** (l'e-commerce) qui porte le **B** de B
 | `bolou-and-co-logo.svg` | Logo principal, sur fond blanc ou clair |
 | `bolou-and-co-logo-blanc.svg` | Logo sur fond bleu ou foncé |
 | `bolou-and-co-logo-vertical.svg` | Logo empilé : cartes de visite, carrés, en-têtes centrés |
-| `bolou-and-co-icone.svg` | L'icône seule : favicon, tampon, petits formats |
-| `bolou-and-co-icone-app.svg` | Icône carrée bleue : application, photo de profil WhatsApp, Facebook, Instagram |
+| `bolou-and-co-logo-vertical-blanc.svg` | Logo empilé, sur fond bleu |
+| `bolou-and-co-icone.svg` | L'icône seule : favicon, application, tampon |
+| `bolou-and-co-photo-profil.svg` | Photo de profil WhatsApp, Facebook, Instagram (reste lisible une fois rognée en rond) |
+| `apercu.png` | Aperçu de toutes les versions |
 
 Les lettres sont vectorisées : le logo s'affiche partout à l'identique, sans police à installer.
 
@@ -18,14 +20,14 @@ Les lettres sont vectorisées : le logo s'affiche partout à l'identique, sans p
 
 | Nom | Code | Usage |
 |---|---|---|
-| Bleu nuit | `#0F2557` | Couleur principale : logo, titres, menus |
-| Bleu royal | `#2251D1` | Couleur secondaire : boutons, liens, « AND CO » |
-| Or | `#F2A71B` | Touche d'accent, à utiliser **avec parcimonie** : anse, soulignements, badges |
+| Bleu BOLOU | `#0D2B5E` | Couleur de la marque : logo, titres, menus |
 | Blanc | `#FFFFFF` | Fonds, texte sur bleu |
+| Bleu royal | `#1F4FB5` | Secondaire, pour les écrans : boutons, liens |
+| Or | `#D4A23C` | Petite touche d'accent, avec parcimonie : badges, soulignements |
 
 ## Police
 
-**Inter Display**, gratuite sur Google Fonts : ExtraBold pour « BOLOU », SemiBold pour « AND CO » et les titres.
+**Montserrat** (gratuite, Google Fonts) : ExtraBold pour « BOLOU », Medium pour « AND CO », SemiBold pour « E-COMMERCE & MULTI-VENTES ».
 
 ## Règles simples
 - Laissez autour du logo un espace vide au moins égal à la hauteur de l'anse.
