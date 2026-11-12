@@ -1,7 +1,7 @@
 /* BOLOU and CO Gestion — service worker : rend l'application installable.
    Les données viennent toujours de Supabase (connexion internet nécessaire). */
-var CACHE = "bco-gestion-v2";
-var CORE = ["./", "index.html", "app.css", "app.js", "config.js", "manifest.webmanifest"];
+var CACHE = "bco-gestion-v3";
+var CORE = ["./", "index.html", "app.css", "app.js", "config.js", "manifest.webmanifest", "logo.svg"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));

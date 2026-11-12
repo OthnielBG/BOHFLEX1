@@ -84,9 +84,14 @@ Ouvrez ensuite http://localhost:8000/gestion/ (pensez à ajouter cette adresse d
 
 Pour retirer l'accès à quelqu'un, décochez **Actif**.
 
+### 6 bis. Activer les photos des produits (mise à jour n°2)
+
+Si vous avez installé l'application avant l'arrivée des photos, exécutez une fois [`supabase/maj-02-photos.sql`](supabase/maj-02-photos.sql) dans **SQL Editor** (coller, puis **Run**). Pour une nouvelle installation, il est déjà inclus dans `schema.sql`.
+
 ### 7. Ajouter vos produits
 
 - **Semelles** : le produit « Semelle BOHFLEX » est déjà créé, avec les pointures 35/36 à 45/46 et les offres **2 paires (6 500 F)** et **3 paires (7 500 F)**. Dans **Stock** puis **Modifier**, indiquez le **coût d'achat** d'une paire.
+- **Photos** : dans **Stock**, ouvrez un produit avec le bouton crayon, puis **Ajouter une photo**. Pour les sacoches, touchez la vignette de chaque couleur pour lui donner sa propre photo. Les photos apparaissent ensuite sur chaque commande. Elles sont réduites automatiquement avant l'envoi, ce qui les rend légères en 3G.
 - **Sacoches** : dans **Stock**, cliquez sur **+ Produit** pour chaque modèle (par exemple « Sacoche bandoulière cuir »), avec son prix de vente, son coût d'achat et ses couleurs (une par ligne).
 - Ajoutez ensuite les quantités réelles avec **+ Entrée de stock**.
 
@@ -125,6 +130,16 @@ Nouvelle ──► Confirmée ──► En livraison ──► Livrée
 5. **Retour** ou **Annulée** : **le stock est remis automatiquement**.
 
 **Expédition vers l'intérieur du pays** : choisissez « Expédition intérieur » et indiquez l'avance reçue par Mobile Money. Le livreur ou le transporteur n'encaisse alors que le reste.
+
+### Vue closeuse : « Ma journée »
+
+C'est l'écran d'accueil de la closeuse. En haut, les compteurs du jour : à confirmer, injoignables, relances, confirmées aujourd'hui. En dessous, la file des commandes à confirmer, **la plus ancienne en premier**. Sur chaque commande, des boutons directs évitent d'ouvrir la fiche :
+
+- **Appeler** et **WhatsApp** (avec un message déjà rédigé) ;
+- **Injoignable** : la commande passe en « injoignable », il reste à envoyer un WhatsApp au client ;
+- **Confirmer** : propose ensuite d'envoyer le récapitulatif au client et de choisir le livreur.
+
+**Saisir une commande reçue sur WhatsApp** : touchez le bouton **+**, puis **Coller un message WhatsApp**. Le nom, le numéro, la ville, l'adresse, l'offre (2 ou 3 paires) et les pointures se remplissent tout seuls. Si le message vient du site (il contient « Réf : BHF-… ») et que la commande est déjà arrivée, l'application le signale pour éviter un doublon. Les pointures et couleurs se choisissent d'un toucher, avec le stock restant affiché.
 
 ### Prospects
 
