@@ -317,7 +317,7 @@
       if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) return;
       var p = Object.assign({}, o, { sizes: o.sizes.join(", "), univers: CFG.univers || "bienetre" });
       try {
-        fetch(CFG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/rpc/site_order", {
+        fetch(CFG.supabaseUrl.trim().replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/+$/, "") + "/rest/v1/rpc/site_order", {
           method: "POST", keepalive: true,
           headers: { "Content-Type": "application/json", apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey },
           body: JSON.stringify({ p: p })

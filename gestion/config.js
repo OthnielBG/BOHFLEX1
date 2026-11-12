@@ -9,7 +9,7 @@
    "service_role".
    ========================================================================== */
 window.BCO_CONFIG = {
-  supabaseUrl: "",      // ex. "https://abcdefgh.supabase.co"
+  supabaseUrl: "https://wohvofrogfdjyjnegguz.supabase.co",
   supabaseAnonKey: "",  // ex. "eyJhbGciOi..."
   appName: "BOLOU and CO"
 };

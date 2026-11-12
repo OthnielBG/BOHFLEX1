@@ -1447,7 +1447,8 @@
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});
 
   if (!CFG.supabaseUrl || !CFG.supabaseAnonKey || !window.supabase) { setupScreen(); return; }
-  S.sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+  CFG.supabaseUrl = String(CFG.supabaseUrl).trim().replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/+$/, "");
+  S.sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey.trim());
   S.recovering = /type=recovery/.test(location.hash);
   S.sb.auth.onAuthStateChange(function (ev) {
     if (ev === "PASSWORD_RECOVERY") { S.recovering = true; authScreen("reset"); }
