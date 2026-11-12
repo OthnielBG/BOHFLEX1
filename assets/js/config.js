@@ -17,7 +17,7 @@ window.BOHFLEX_CONFIG = {
   // Application de gestion BOLOU and CO (Supabase) : chaque commande y arrive dans « À confirmer ».
   // Valeurs à copier depuis l'application (Équipe > Recevoir les commandes d'un site). Laisser vide pour désactiver.
   supabaseUrl: "https://wohvofrogfdjyjnegguz.supabase.co",
-  supabaseAnonKey: "",
+  supabaseAnonKey: "sb_publishable_ZvpazvE56-hOgGZCERxXOw_uAWdrAwU",
   univers: "bienetre", // "bienetre" (semelles) ou "passion" (sacoches)
 
   // ID du pixel Meta (Facebook). Laisser vide pour désactiver.

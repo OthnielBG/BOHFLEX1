@@ -10,6 +10,6 @@
    ========================================================================== */
 window.BCO_CONFIG = {
   supabaseUrl: "https://wohvofrogfdjyjnegguz.supabase.co",
-  supabaseAnonKey: "",  // ex. "eyJhbGciOi..."
+  supabaseAnonKey: "sb_publishable_ZvpazvE56-hOgGZCERxXOw_uAWdrAwU",
   appName: "BOLOU and CO"
 };
