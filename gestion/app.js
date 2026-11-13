@@ -1865,7 +1865,7 @@
   function notifSupported() { return "Notification" in window; }
   function systemNotify(title, body, tag) {
     if (!notifSupported() || Notification.permission !== "granted") return;
-    var opts = { body: body, icon: "icon-192.png", badge: "icon-192.png", tag: tag, renotify: true, data: { url: location.href.split("#")[0] + "#/commandes" } };
+    var opts = { body: body, icon: "icon-192.png", badge: "badge.png", tag: tag, renotify: true, data: { url: location.href.split("#")[0] + "#/commandes" } };
     var reg = navigator.serviceWorker && navigator.serviceWorker.getRegistration ? navigator.serviceWorker.getRegistration() : Promise.resolve(null);
     reg.then(function (r) { if (r) r.showNotification(title, opts); else new Notification(title, opts); }).catch(function () {});
   }

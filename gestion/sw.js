@@ -1,7 +1,7 @@
 /* BOLOU and CO Gestion — service worker : rend l'application installable.
    Les données viennent toujours de Supabase (connexion internet nécessaire). */
-var CACHE = "bco-gestion-v7";
-var CORE = ["./", "index.html", "app.css", "app.js", "config.js", "manifest.webmanifest", "logo.svg"];
+var CACHE = "bco-gestion-v8";
+var CORE = ["./", "index.html", "app.css", "app.js", "config.js", "manifest.webmanifest", "logo.svg", "badge.png", "icon-192.png"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
@@ -44,7 +44,7 @@ self.addEventListener("push", function (e) {
     var visible = list.some(function (c) { return c.visibilityState === "visible" && c.url.indexOf(self.registration.scope) === 0; });
     if (visible && !d.test) return;
     return self.registration.showNotification(d.title || "BOLOU and CO", {
-      body: d.body || "", icon: "icon-192.png", badge: "icon-192.png", tag: d.tag || "bco", renotify: true,
+      body: d.body || "", icon: "icon-192.png", badge: "badge.png", tag: d.tag || "bco", renotify: true,
       vibrate: [200, 100, 200], data: { url: self.registration.scope + "index.html" + (d.url || "#/commandes") }
     });
   }));
