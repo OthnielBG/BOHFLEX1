@@ -76,6 +76,7 @@
     tag: '<path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/>',
     inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
     lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    bellring: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0M4 2C2.8 3.7 2 5.7 2 8M22 8a10 10 0 0 0-2-6"/>',
     install: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/>'
   };
   function ico(name, cls) { return '<svg class="i ' + (cls || "") + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || "") + "</svg>"; }
@@ -458,7 +459,7 @@
     var due = balances.reduce(function (s, b) { return s + Math.max(b.due, 0); }, 0);
     var hour = new Date().getUTCHours();
     var hello = (hour < 12 ? "Bonjour " : hour < 18 ? "Bon après-midi " : "Bonsoir ") + firstName(S.me.full_name || "");
-    var html = header(hello, longDate(), "", true);
+    var html = header(hello, longDate(), "", true) + notifCard();
 
     if (can("gerant", "closeuse")) {
       html += '<div class="counters">' +
@@ -493,6 +494,7 @@
     bindUni(el);
     bindOrderCards(el, open);
     bindContactCards(el, follow);
+    bindNotif(el);
     S.refresh = function () { if (S.view === "tableau") vDashboard(el).catch(fail); };
   }
   function counter(n, label, icon, href, mod) {
@@ -763,8 +765,8 @@
     var totalManual = !!o;
 
     var body = '<form class="form" id="of" novalidate>' +
-      (o ? "" : '<button type="button" class="btn btn--block" id="paste-btn">' + ico("paste") + "Coller un message WhatsApp</button>" +
-        '<div id="paste-box" hidden><label class="f">Collez le message du client ou la commande reçue du site<textarea id="paste-txt" placeholder="Bonjour BOHFLEX ! Je souhaite commander : Offre : 3 paires…"></textarea></label>' +
+      (o ? "" : '<button type="button" class="btn btn--block" id="paste-btn">' + ico("paste") + "Coller un message WhatsApp (client venu d\'une pub)</button>" +
+        '<div id="paste-box" hidden><label class="f">Collez le message du client : son nom, son numéro, sa ville et ses pointures seront repris automatiquement<textarea id="paste-txt" placeholder="Bonjour BOHFLEX ! Je souhaite commander : Offre : 3 paires…"></textarea></label>' +
         '<button type="button" class="btn btn--primary btn--block" id="paste-go" style="margin-top:8px">' + ico("check") + "Remplir la commande</button></div>") +
       '<div id="dup-note"></div>' + uniPicker("univers", d.univers) +
       '<div class="row"><label class="f">Téléphone *<input name="phone" inputmode="tel" value="' + esc(d.phone ? fphone(d.phone) : "") + '" placeholder="07 00 00 00 00" autocomplete="off"></label>' +
@@ -1760,6 +1762,7 @@
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "contacts" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "variants" }, refresh)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, function (p) { onNewOrder(p && p.new); })
       .subscribe();
   }
 
@@ -1783,6 +1786,72 @@
     if (lockedUni()) S.uni = lockedUni();
     try { await loadRefs(); } catch (e) { fail(e); }
     shell(); route(); realtime();
+  }
+
+  /* ------------------------------------------------------------------------
+     Alerte « nouvelle commande du site » (son, vibration, bannière, notification)
+     ------------------------------------------------------------------------ */
+  var audioCtx = null, unseen = 0, baseTitle = document.title;
+  document.addEventListener("pointerdown", function () {
+    try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); } catch (e) { /* pas de son */ }
+  }, { passive: true });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { unseen = 0; document.title = baseTitle; } });
+  function beep() {
+    if (!audioCtx) return;
+    try {
+      [0, 0.18].forEach(function (t, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = "sine"; o.frequency.value = i ? 1175 : 880;
+        g.gain.setValueAtTime(0.0001, audioCtx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + t + 0.16);
+        o.connect(g); g.connect(audioCtx.destination); o.start(audioCtx.currentTime + t); o.stop(audioCtx.currentTime + t + 0.17);
+      });
+    } catch (e) { /* pas de son */ }
+  }
+  function notifSupported() { return "Notification" in window; }
+  function systemNotify(title, body, tag) {
+    if (!notifSupported() || Notification.permission !== "granted") return;
+    var opts = { body: body, icon: "icon-192.png", badge: "icon-192.png", tag: tag, renotify: true, data: { url: location.href.split("#")[0] + "#/commandes" } };
+    var reg = navigator.serviceWorker && navigator.serviceWorker.getRegistration ? navigator.serviceWorker.getRegistration() : Promise.resolve(null);
+    reg.then(function (r) { if (r) r.showNotification(title, opts); else new Notification(title, opts); }).catch(function () {});
+  }
+  function onNewOrder(row) {
+    if (!row || !can("gerant", "closeuse")) return;
+    if (row.created_by && S.me && row.created_by === S.me.id) return;   // pas d'alerte pour ses propres saisies
+    if (lockedUni() && row.univers !== lockedUni()) return;
+    var who = row.customer_name || fphone(row.phone);
+    var title = row.source === "site" ? "Nouvelle commande du site" : "Nouvelle commande";
+    var body = who + " · " + money(row.total_amount) + (row.city ? " · " + row.city : "") + " — " + UNI[row.univers];
+    beep();
+    if (navigator.vibrate) try { navigator.vibrate([180, 80, 180]); } catch (e) { /* ignore */ }
+    if (document.hidden) { unseen++; document.title = "(" + unseen + ") " + baseTitle; }
+    systemNotify(title, body, "order-" + row.id);
+    var bar = $("#alertbar");
+    if (!bar) { bar = document.createElement("div"); bar.id = "alertbar"; bar.className = "alertbar"; bar.setAttribute("role", "alert"); document.body.appendChild(bar); }
+    bar.innerHTML = '<span class="alertbar__ico">' + ico("bellring") + "</span><span><b>" + esc(title) + "</b><br>" + esc(body) + '</span><button type="button" class="btn btn--sm btn--ok">Voir</button><button type="button" class="x" aria-label="Fermer">' + ico("x", "i--sm") + "</button>";
+    bar.hidden = false;
+    $(".btn--ok", bar).onclick = function () { bar.hidden = true; orderDetail(row.id); };
+    $(".x", bar).onclick = function () { bar.hidden = true; };
+    clearTimeout(bar._t); bar._t = setTimeout(function () { bar.hidden = true; }, 20000);
+  }
+  function notifCard() {
+    if (!notifSupported() || !can("gerant", "closeuse")) return "";
+    if (Notification.permission === "default") return '<div class="note note--info" style="margin-bottom:14px;align-items:center">' + ico("bellring") +
+      '<span style="flex:1">Activez les alertes pour être prévenue dès qu\'une commande arrive du site.</span><button type="button" class="btn btn--sm btn--primary" data-notif>Activer</button></div>';
+    if (Notification.permission === "denied") return '<div class="note" style="margin-bottom:14px">' + ico("alert") +
+      "<span>Les notifications sont bloquées sur ce téléphone. Pour les réactiver : touchez le cadenas à côté de l'adresse (ou les réglages de l'application), puis Notifications → Autoriser.</span></div>";
+    return "";
+  }
+  function bindNotif(root) {
+    $$("[data-notif]", root).forEach(function (b) {
+      b.addEventListener("click", function () {
+        Notification.requestPermission().then(function (p) {
+          if (p === "granted") { toast("Alertes activées", "ok"); systemNotify("Alertes activées", "Vous serez prévenue à chaque nouvelle commande.", "test"); }
+          route();
+        });
+      });
+    });
   }
 
   /* ------------------------------------------------------------------------

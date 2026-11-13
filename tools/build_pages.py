@@ -546,8 +546,9 @@ order_body = f"""
     <div class="success__icon">{ic("check")}</div>
     <h1>Merci pour votre commande !</h1>
     <p>Référence : <strong id="success-ref"></strong></p>
-    <p class="muted">Votre message a été préparé sur WhatsApp. <strong>Pensez à appuyer sur « Envoyer »</strong> pour que notre équipe confirme votre commande. Le livreur vous appellera avant de passer.</p>
-    <p><a class="btn btn--wa" id="success-wa" href="#" target="_blank" rel="noopener">{ic("whatsapp")} Rouvrir WhatsApp</a></p>
+    <p>Votre commande est bien enregistrée.</p>
+    <p class="muted">Notre équipe vous appelle <strong>très bientôt</strong> au <strong id="success-phone"></strong> pour confirmer l'adresse et le moment de la livraison. Vous payez <strong>seulement à la livraison</strong>.</p>
+    <p class="small muted">Une question ? <a href="#" data-wa>Écrivez-nous sur WhatsApp</a></p>
     <p><a href="index.html">← Retour à l'accueil</a></p>
   </div>
 </div>
@@ -558,9 +559,10 @@ order_body = f"""
     <button class="modal__close" type="button" data-close aria-label="Fermer">×</button>
     <h2 id="recap-title">Vérifiez votre commande</h2>
     <div class="recap"><dl id="recap-list"></dl></div>
-    <p class="small muted">En cliquant ci-dessous, WhatsApp s'ouvre avec votre commande pré-remplie. Il vous suffit d'appuyer sur <strong>Envoyer</strong>.</p>
+    <p class="small muted">Vérifiez vos informations : notre équipe vous appellera à ce numéro pour confirmer la livraison.</p>
+    <p class="notice notice--error" id="order-error" hidden>L'envoi n'a pas abouti (connexion internet ?). Réessayez, ou envoyez votre commande sur WhatsApp : <a id="order-wa" href="#" target="_blank" rel="noopener">envoyer sur WhatsApp</a>.</p>
     <div class="modal__actions">
-      <a class="btn btn--wa btn--block" id="wa-confirm" href="#" target="_blank" rel="noopener">{ic("whatsapp")} Confirmer sur WhatsApp</a>
+      <button class="btn btn--primary btn--block" type="button" id="order-confirm">{ic("check")} Confirmer ma commande</button>
       <button class="btn btn--outline btn--block" type="button" data-close>Modifier</button>
     </div>
   </div>

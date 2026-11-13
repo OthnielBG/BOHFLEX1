@@ -300,10 +300,11 @@
         var dd = document.createElement("dd"); dd.textContent = r[1];
         dl.appendChild(dt); dl.appendChild(dd);
       });
-      $("#wa-confirm").href = waLink(waMessage(o));
+      $("#order-wa").href = waLink(waMessage(o));
+      $("#order-error").hidden = true;
       modal.classList.add("is-open");
       document.body.style.overflow = "hidden";
-      $("#wa-confirm").focus();
+      $("#order-confirm").focus();
     }
     function closeModal() {
       modal.classList.remove("is-open");
@@ -312,17 +313,17 @@
     $$("[data-close]", modal).forEach(function (b) { b.addEventListener("click", closeModal); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
 
-    // Envoie la commande à l'application de gestion (Supabase)
+    // Envoie la commande à l'application de gestion (Supabase). Renvoie une promesse : true si enregistrée.
     function sendToApp(o) {
-      if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) return;
+      if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) return Promise.resolve(false);
       var p = Object.assign({}, o, { sizes: o.sizes.join(", "), univers: CFG.univers || "bienetre" });
-      try {
-        fetch(CFG.supabaseUrl.trim().replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/+$/, "") + "/rest/v1/rpc/site_order", {
-          method: "POST", keepalive: true,
-          headers: { "Content-Type": "application/json", apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey },
-          body: JSON.stringify({ p: p })
-        }).catch(function () {});
-      } catch (e) { /* on ne bloque jamais la commande */ }
+      var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(false); }, 20000); });
+      var send = fetch(CFG.supabaseUrl.trim().replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/+$/, "") + "/rest/v1/rpc/site_order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey },
+        body: JSON.stringify({ p: p })
+      }).then(function (r) { return r.ok; }).catch(function () { return false; });
+      return Promise.race([send, timeout]);
     }
 
     function sendToWebhook(o) {
@@ -344,22 +345,30 @@
       openModal(current);
     });
 
-    $("#wa-confirm").addEventListener("click", function () {
-      if (!current) return;
-      sendToApp(current);
-      sendToWebhook(current);
-      store(STORAGE_KEY, { name: current.name, phone: current.phone, city: current.city, address: current.address });
-      track("Purchase", { currency: "XOF", value: current.price, num_items: current.pairs });
-      // Laisse le lien s'ouvrir (WhatsApp), puis affiche l'écran de confirmation
-      setTimeout(function () {
+    // La commande part directement dans l'application de gestion : la closeuse est alertée et rappelle le client.
+    // WhatsApp ne sert plus qu'en secours, si l'envoi échoue.
+    var confirmBtn = $("#order-confirm");
+    var confirmLabel = confirmBtn.innerHTML;
+    confirmBtn.addEventListener("click", function () {
+      if (!current || confirmBtn.disabled) return;
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Envoi de votre commande…";
+      $("#order-error").hidden = true;
+      sendToApp(current).then(function (ok) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = confirmLabel;
+        if (!ok) { $("#order-error").hidden = false; return; }
+        sendToWebhook(current);
+        store(STORAGE_KEY, { name: current.name, phone: current.phone, city: current.city, address: current.address });
+        track("Purchase", { currency: "XOF", value: current.price, num_items: current.pairs });
         closeModal();
         $("#order-view").hidden = true;
-        var ok = $("#order-success");
-        ok.hidden = false;
+        var okView = $("#order-success");
+        okView.hidden = false;
         $("#success-ref").textContent = current.ref;
-        $("#success-wa").href = $("#wa-confirm").href;
+        $("#success-phone").textContent = "+225 " + current.phone;
         window.scrollTo(0, 0);
-      }, 400);
+      });
     });
   }
 

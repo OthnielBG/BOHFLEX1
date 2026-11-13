@@ -143,6 +143,14 @@ Nouvelle ──► Confirmée ──► En livraison ──► Livrée
 
 **Expédition vers l'intérieur du pays** : choisissez « Expédition intérieur » et indiquez l'avance reçue par Mobile Money. Le livreur ou le transporteur n'encaisse alors que le reste.
 
+### Commandes du site : plus besoin de WhatsApp
+
+Sur le site, le client remplit le formulaire, vérifie sa commande et touche **« Confirmer ma commande »**. La commande part **directement dans l'application**, onglet **À confirmer**. Le client voit alors : « Votre commande est bien enregistrée, notre équipe vous appelle très bientôt ». Il n'a plus de message WhatsApp à envoyer. WhatsApp ne lui est proposé qu'en secours, si l'envoi échoue (pas de connexion, par exemple).
+
+**Alerte de la closeuse** : à chaque nouvelle commande du site, son téléphone joue un son et vibre, et une bannière s'affiche. Son bouton **Voir** ouvre directement la fiche. Elle ne voit que les commandes de son activité.
+- La première fois, elle touche **« Activer »** dans le bandeau bleu de « Ma journée » et accepte les notifications. Le téléphone affiche alors aussi une notification système quand l'application est en arrière-plan.
+- Pour l'instant, l'alerte fonctionne quand l'application est **ouverte**, même en arrière-plan. Si l'application est complètement fermée, la commande attend dans « À confirmer », avec une pastille rouge sur l'onglet Commandes.
+
 ### Vue closeuse : « Ma journée »
 
 C'est l'écran d'accueil de la closeuse. En haut, les compteurs du jour : à confirmer, injoignables, relances, confirmées aujourd'hui. En dessous, la file des commandes à confirmer, **la plus ancienne en premier**. Sur chaque commande, des boutons directs évitent d'ouvrir la fiche :
@@ -151,7 +159,7 @@ C'est l'écran d'accueil de la closeuse. En haut, les compteurs du jour : à con
 - **Injoignable** : la commande passe en « injoignable », il reste à envoyer un WhatsApp au client ;
 - **Confirmer** : propose ensuite d'envoyer le récapitulatif au client et de choisir le livreur.
 
-**Saisir une commande reçue sur WhatsApp** : touchez le bouton **+**, puis **Coller un message WhatsApp**. Le nom, le numéro, la ville, l'adresse, l'offre (2 ou 3 paires) et les pointures se remplissent tout seuls. Si le message vient du site (il contient « Réf : BHF-… ») et que la commande est déjà arrivée, l'application le signale pour éviter un doublon. Les pointures et couleurs se choisissent d'un toucher, avec le stock restant affiché.
+**Saisir une commande reçue sur WhatsApp** (clients venus des **publicités WhatsApp**) : touchez le bouton **+**, puis **Coller un message WhatsApp**. Le nom, le numéro, la ville, l'adresse, l'offre (2 ou 3 paires) et les pointures se remplissent tout seuls. Si le message vient du site (il contient « Réf : BHF-… ») et que la commande est déjà arrivée, l'application le signale pour éviter un doublon. Les pointures et couleurs se choisissent d'un toucher, avec le stock restant affiché.
 
 ### Prospects
 

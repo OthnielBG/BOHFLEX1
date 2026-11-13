@@ -498,6 +498,7 @@ body.page-order { padding-bottom: 0; }
 .prose ul { padding-left: 1.2em; }
 .contact-cards .card { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .contact-cards .icon { width: 34px; height: 34px; color: var(--orange); }
+.notice--error { background: #FDECEC !important; color: #B42318 !important; border-color: #F5C2BE !important; }
 .notice {
   background: #FFF8E1; border: 1px solid #FFE08A; color: #6B5300; border-radius: 10px; padding: 12px 14px; font-size: .9rem;
 }
