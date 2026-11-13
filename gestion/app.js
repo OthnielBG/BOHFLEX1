@@ -1666,6 +1666,9 @@
       '<div><button type="button" class="btn btn--primary" id="save-me">' + ico("check") + "Enregistrer</button></div></form></div>" +
       '<div class="card"><form class="form" id="pwf"><h2>Mot de passe</h2><label class="f">Nouveau mot de passe (8 caractères min.)<input type="password" name="pw" autocomplete="new-password"></label>' +
       '<div><button type="button" class="btn" id="save-pw">' + ico("lock") + "Changer</button></div></form></div>" +
+      (can("gerant", "closeuse") && notifSupported() ? '<div class="card"><h2 style="margin-bottom:6px">Notifications des commandes</h2>' +
+        '<p class="muted small" style="margin-top:0" id="push-state">Vérification…</p><div class="btn-row"><button type="button" class="btn btn--primary" id="push-on">' + ico("bellring") + "Activer sur ce téléphone</button>" +
+        '<button type="button" class="btn" id="push-test">' + ico("send") + "Envoyer un test</button></div></div>" : "") +
       (isInstalled() ? "" : '<div class="card"><h2 style="margin-bottom:6px">Application sur le téléphone</h2><p class="muted small" style="margin-top:0">Installez BOLOU and CO sur l\'écran d\'accueil pour l\'ouvrir en un toucher, en plein écran.</p>' +
         '<button type="button" class="btn btn--primary" id="install2">' + ico("install") + "Installer l'application</button></div>") +
       '<p style="margin-top:16px"><button class="btn btn--bad" id="logout2">' + ico("logout") + "Se déconnecter</button></p>";
@@ -1682,6 +1685,24 @@
     });
     $("#logout2").addEventListener("click", logout);
     if ($("#install2")) $("#install2").addEventListener("click", installHelp);
+    if ($("#push-on")) {
+      var showState = function () {
+        var st = $("#push-state"); if (!st) return;
+        if (!pushSupported()) st.textContent = isIOS() && !isInstalled() ? "Sur iPhone, installez d'abord l'application sur l'écran d'accueil, puis ouvrez-la depuis son icône pour activer les notifications." : "Ce navigateur ne permet pas les notifications quand l'application est fermée.";
+        else if (Notification.permission === "denied") st.textContent = "Notifications bloquées : autorisez-les dans les réglages du navigateur ou de l'application, puis revenez ici.";
+        else st.textContent = S.pushOk ? "Activées : ce téléphone est prévenu de chaque nouvelle commande du site, même application fermée." : "Pas encore activées sur ce téléphone.";
+      };
+      showState();
+      ensurePush(false).then(showState);
+      $("#push-on").addEventListener("click", function () {
+        var go = function () { return ensurePush(true).then(showState); };
+        if (notifSupported() && Notification.permission === "default") Notification.requestPermission().then(go); else go();
+      });
+      $("#push-test").addEventListener("click", async function () {
+        if (!S.pushOk && !(await ensurePush(true))) return;
+        try { await q(S.sb.rpc("test_push")); toast("Test envoyé : la notification arrive dans quelques secondes", "ok"); } catch (e) { fail(e); }
+      });
+    }
   }
 
   /* ========================================================================
@@ -1763,6 +1784,7 @@
     closeModal();
   }
   async function logout() {
+    await dropPush();
     var done = S.sb.auth.signOut({ scope: "local" }).catch(function () {});
     await Promise.race([done, new Promise(function (r) { setTimeout(r, 4000); })]);
     clearLocalSession();
@@ -1816,6 +1838,7 @@
     S.uni = lockedUni() || store("uni") || "all";
     try { await loadRefs(); } catch (e) { fail(e); }
     shell(); route(); realtime();
+    ensurePush(false);
   }
 
   /* ------------------------------------------------------------------------
@@ -1856,7 +1879,7 @@
     beep();
     if (navigator.vibrate) try { navigator.vibrate([180, 80, 180]); } catch (e) { /* ignore */ }
     if (document.hidden) { unseen++; document.title = "(" + unseen + ") " + baseTitle; }
-    systemNotify(title, body, "order-" + row.id);
+    if (!S.pushOk) systemNotify(title, body, "order-" + row.id);
     var bar = $("#alertbar");
     if (!bar) { bar = document.createElement("div"); bar.id = "alertbar"; bar.className = "alertbar"; bar.setAttribute("role", "alert"); document.body.appendChild(bar); }
     bar.innerHTML = '<span class="alertbar__ico">' + ico("bellring") + "</span><span><b>" + esc(title) + "</b><br>" + esc(body) + '</span><button type="button" class="btn btn--sm btn--ok">Voir</button><button type="button" class="x" aria-label="Fermer">' + ico("x", "i--sm") + "</button>";
@@ -1864,6 +1887,49 @@
     $(".btn--ok", bar).onclick = function () { bar.hidden = true; orderDetail(row.id); };
     $(".x", bar).onclick = function () { bar.hidden = true; };
     clearTimeout(bar._t); bar._t = setTimeout(function () { bar.hidden = true; }, 20000);
+  }
+  /* ---------- Notifications « push » : le téléphone est prévenu même application fermée ---------- */
+  function pushSupported() { return "serviceWorker" in navigator && "PushManager" in window && notifSupported() && location.protocol === "https:"; }
+  function b64ToBytes(b64) {
+    var pad = "=".repeat((4 - b64.length % 4) % 4), raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    var out = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i); return out;
+  }
+  function withTimeout(promise, ms, msg) { return Promise.race([promise, new Promise(function (_, rej) { setTimeout(function () { rej(new Error(msg)); }, ms); })]); }
+  async function pushPublicKey() {
+    var k = null;
+    try { k = await q(S.sb.rpc("push_public_key")); } catch (e) { throw new Error("Base à mettre à jour : exécutez maj-04-notifications.sql dans Supabase."); }
+    if (k) return k;
+    var r = await fetch(CFG.supabaseUrl + "/functions/v1/notify-order", {
+      method: "POST", headers: { "Content-Type": "application/json", apikey: CFG.supabaseAnonKey }, body: JSON.stringify({ action: "setup" })
+    }).catch(function () { return null; });
+    if (!r || !r.ok) throw new Error("La fonction « notify-order » n'est pas encore installée dans Supabase (voir le guide, étape 6 ter).");
+    return (await r.json()).publicKey;
+  }
+  async function ensurePush(interactive) {
+    S.pushOk = false;
+    if (!pushSupported() || Notification.permission !== "granted" || !can("gerant", "closeuse")) return false;
+    try {
+      var reg = await withTimeout(navigator.serviceWorker.ready, 10000, "Service de notification indisponible : rechargez la page.");
+      var sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(await pushPublicKey()) });
+      var j = sub.toJSON();
+      await q(S.sb.rpc("save_push_subscription", { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_ua: navigator.userAgent }));
+      S.pushOk = true;
+      if (interactive) toast("Notifications activées sur ce téléphone", "ok");
+      return true;
+    } catch (e) {
+      console.warn("push", e);
+      if (interactive) toast(e.message || "Impossible d'activer les notifications", "err");
+      return false;
+    }
+  }
+  async function dropPush() {
+    try {
+      if (!pushSupported()) return;
+      var reg = await withTimeout(navigator.serviceWorker.getRegistration(), 3000, "sw");
+      var sub = reg && await reg.pushManager.getSubscription();
+      if (sub) await withTimeout(S.sb.rpc("delete_push_subscription", { p_endpoint: sub.endpoint }), 3000, "rpc");
+    } catch (e) { /* ignore */ }
   }
   function notifCard() {
     if (!notifSupported() || !can("gerant", "closeuse")) return "";
@@ -1877,8 +1943,8 @@
     $$("[data-notif]", root).forEach(function (b) {
       b.addEventListener("click", function () {
         Notification.requestPermission().then(function (p) {
-          if (p === "granted") { toast("Alertes activées", "ok"); systemNotify("Alertes activées", "Vous serez prévenue à chaque nouvelle commande.", "test"); }
-          route();
+          if (p === "granted") ensurePush(true).then(function (ok) { if (!ok && !pushSupported()) toast("Alertes activées (application ouverte)", "ok"); route(); });
+          else route();
         });
       });
     });

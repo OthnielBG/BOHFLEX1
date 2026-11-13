@@ -100,6 +100,28 @@ Pour une nouvelle installation, tout cela est déjà inclus dans `schema.sql`. L
 
 Une closeuse réservée à une activité ne voit que les commandes, les prospects et les relances de cette activité. La base de données le garantit elle-même. Ses formulaires sont pré-réglés sur son activité.
 
+### 6 ter. Notifications sur les téléphones (même application fermée)
+
+Sur téléphone, une page web est mise en pause dès qu'elle passe en arrière-plan. Pour que la closeuse soit prévenue d'une commande du site **même application fermée ou écran verrouillé**, il faut deux étapes, à faire une seule fois.
+
+**1. La base de données.** Dans **SQL Editor**, ouvrez une **New query** (une requête « Database », pas « Logs »). Collez tout le fichier [`supabase/maj-04-notifications.sql`](supabase/maj-04-notifications.sql) et cliquez sur **Run**.
+
+**2. La fonction d'envoi.**
+1. Dans Supabase, ouvrez **Edge Functions**, puis **Deploy a new function** (ou « Create a function »), puis **Via Editor**.
+2. Nom de la fonction : **`notify-order`**. C'est important : exactement ce nom.
+3. Effacez le code d'exemple et collez tout le fichier [`supabase/functions/notify-order/index.ts`](supabase/functions/notify-order/index.ts). Cliquez sur **Deploy**.
+4. Dans les réglages de la fonction (**Details** ou **Settings**), **désactivez « Verify JWT »**, puis enregistrez. Sans cette étape, l'application ne peut pas inscrire les téléphones.
+
+Il n'y a aucune clé à créer : la fonction fabrique ses propres clés au premier usage, et elles restent illisibles depuis l'application.
+
+**3. Sur chaque téléphone** (gérant et closeuses) :
+- Ouvrez **Mon compte**, puis **Notifications des commandes**, puis **Activer sur ce téléphone**, et acceptez.
+- Touchez **Envoyer un test**. Une notification doit arriver en quelques secondes.
+- **iPhone** : il faut iOS 16.4 ou plus récent. Installez d'abord l'application sur l'écran d'accueil (Safari, puis Partager, puis Sur l'écran d'accueil), ouvrez-la **depuis son icône**, puis activez.
+- **Android** : sur certains téléphones (Samsung, Xiaomi, Tecno, Infinix…), autorisez aussi Chrome à fonctionner en arrière-plan : Réglages, puis Batterie, puis Chrome, puis Sans restriction.
+
+Seules les commandes **du site** déclenchent une notification. Le gérant reçoit tout. Une closeuse ne reçoit que son activité. Le livreur ne reçoit rien. À la déconnexion, le téléphone cesse de recevoir les alertes du compte quitté.
+
 ### 7. Ajouter vos produits
 
 - **Semelles** : le produit « Semelle BOHFLEX » est déjà créé, avec les pointures 35/36 à 45/46 et les offres **2 paires (6 500 F)** et **3 paires (7 500 F)**. Dans **Stock** puis **Modifier**, indiquez le **coût d'achat** d'une paire.

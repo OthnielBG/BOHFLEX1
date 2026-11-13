@@ -1,6 +1,6 @@
 /* BOLOU and CO Gestion — service worker : rend l'application installable.
    Les données viennent toujours de Supabase (connexion internet nécessaire). */
-var CACHE = "bco-gestion-v6";
+var CACHE = "bco-gestion-v7";
 var CORE = ["./", "index.html", "app.css", "app.js", "config.js", "manifest.webmanifest", "logo.svg"];
 
 self.addEventListener("install", function (e) {
@@ -32,5 +32,20 @@ self.addEventListener("notificationclick", function (e) {
       if (list[i].url.indexOf(self.registration.scope) === 0 && "focus" in list[i]) { list[i].navigate(url).catch(function () {}); return list[i].focus(); }
     }
     return self.clients.openWindow(url);
+  }));
+});
+
+// Notification « push » envoyée par le serveur (nouvelle commande du site), même application fermée
+self.addEventListener("push", function (e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: "BOLOU and CO", body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+    // Si l'application est déjà à l'écran, elle affiche sa propre bannière : pas de doublon
+    var visible = list.some(function (c) { return c.visibilityState === "visible" && c.url.indexOf(self.registration.scope) === 0; });
+    if (visible && !d.test) return;
+    return self.registration.showNotification(d.title || "BOLOU and CO", {
+      body: d.body || "", icon: "icon-192.png", badge: "icon-192.png", tag: d.tag || "bco", renotify: true,
+      vibrate: [200, 100, 200], data: { url: self.registration.scope + "index.html" + (d.url || "#/commandes") }
+    });
   }));
 });
