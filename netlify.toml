@@ -1,0 +1,8 @@
+# Netlify — réglages du site BOHFLEX et de l'application de gestion (/gestion/)
+#
+# Économie de crédits (forfait gratuit) : Netlify ne publie une nouvelle version
+# QUE si le message du dernier enregistrement (commit) contient « [deploy] ».
+# Les autres enregistrements sont ignorés et ne consomment pas de publication.
+[build]
+  publish = "."
+  ignore = '''git log -1 --pretty=%B | grep -qF "[deploy]" && exit 1 || exit 0'''
