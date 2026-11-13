@@ -1706,7 +1706,10 @@
       var d = formData(e.target), btn = $("button[type=submit]", e.target), res;
       btn.disabled = true;
       try {
-        if (mode === "login") res = await S.sb.auth.signInWithPassword({ email: d.email, password: d.password });
+        if (mode === "login") {
+          res = await S.sb.auth.signInWithPassword({ email: d.email, password: d.password });
+          if (!res.error) { resetState(); $("#root").innerHTML = '<div class="boot">Connexion…</div>'; start(); return; }
+        }
         if (mode === "signup") {
           if (d.password.length < 8) throw new Error("Mot de passe : 8 caractères minimum");
           res = await S.sb.auth.signUp({ email: d.email, password: d.password, options: { data: { full_name: d.full_name }, emailRedirectTo: location.origin + location.pathname } });
@@ -1750,7 +1753,23 @@
       "<li>Rechargez cette page et créez votre compte : le premier compte devient gérant.</li></ol></div>";
   }
 
-  async function logout() { await S.sb.auth.signOut(); S.me = null; authScreen("login"); }
+  function clearLocalSession() {
+    try { Object.keys(localStorage).forEach(function (k) { if (/^sb-.*-auth-token/.test(k)) localStorage.removeItem(k); }); } catch (e) { /* ignore */ }
+  }
+  function resetState() {
+    S.me = null; S.session = null; S.refresh = null; S.vs = {}; S.badges = {};
+    S.uni = store("uni") || "all";
+    if (channel) { try { S.sb.removeChannel(channel); } catch (e) { /* ignore */ } channel = null; }
+    closeModal();
+  }
+  async function logout() {
+    var done = S.sb.auth.signOut({ scope: "local" }).catch(function () {});
+    await Promise.race([done, new Promise(function (r) { setTimeout(r, 4000); })]);
+    clearLocalSession();
+    resetState();
+    history.replaceState(null, "", location.pathname);
+    authScreen("login");
+  }
 
   var channel;
   function realtime() {
@@ -1768,8 +1787,19 @@
 
   var starting = null;
   function start() {
-    if (!starting) starting = doStart().finally(function () { starting = null; });
+    if (!starting) {
+      var watchdog = new Promise(function (resolve, reject) { setTimeout(function () { reject(new Error("timeout")); }, 15000); });
+      starting = Promise.race([doStart(), watchdog]).catch(function (e) { stuckScreen(e); }).finally(function () { starting = null; });
+    }
     return starting;
+  }
+  function stuckScreen(e) {
+    console.error(e);
+    $("#root").innerHTML = '<div class="auth"><div class="card">' + authLogo() + "<h1>Chargement trop long</h1>" +
+      "<p>La connexion au serveur ne répond pas. Vérifiez votre connexion internet, puis réessayez.</p>" +
+      '<div class="btn-row"><button class="btn btn--primary" id="retry">' + ico("history") + 'Réessayer</button><button class="btn" id="relog">' + ico("logout") + "Se reconnecter</button></div></div></div>";
+    $("#retry").addEventListener("click", function () { location.reload(); });
+    $("#relog").addEventListener("click", function () { clearLocalSession(); resetState(); authScreen("login"); });
   }
   async function doStart() {
     if (S.recovering) { authScreen("reset"); return; }
@@ -1783,7 +1813,7 @@
       return;
     }
     if (!S.me.active || !S.me.role) { pendingScreen(); return; }
-    if (lockedUni()) S.uni = lockedUni();
+    S.uni = lockedUni() || store("uni") || "all";
     try { await loadRefs(); } catch (e) { fail(e); }
     shell(); route(); realtime();
   }
@@ -1888,11 +1918,15 @@
 
   if (!CFG.supabaseUrl || !CFG.supabaseAnonKey || !window.supabase) { setupScreen(); return; }
   CFG.supabaseUrl = String(CFG.supabaseUrl).trim().replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/+$/, "");
-  S.sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey.trim());
+  // Pas de verrou partagé entre onglets : sur téléphone, un onglet mis en pause (ou l'application installée
+  // ouverte en même temps que le navigateur) pouvait garder ce verrou et bloquer toute l'application sur « Chargement… ».
+  S.sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey.trim(), {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, lock: function (name, timeout, fn) { return fn(); } }
+  });
   S.recovering = /type=recovery/.test(location.hash);
   S.sb.auth.onAuthStateChange(function (ev) {
     if (ev === "PASSWORD_RECOVERY") { S.recovering = true; authScreen("reset"); }
-    else if (ev === "SIGNED_IN" && !S.me && !S.recovering) setTimeout(start, 0);
+    else if (ev === "SIGNED_IN" && !S.me && !S.recovering && !$("#authf")) setTimeout(start, 0);
   });
   start();
 })();
