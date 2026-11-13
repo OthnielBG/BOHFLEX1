@@ -75,7 +75,8 @@
     note: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
     tag: '<path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/>',
     inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
-    lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'
+    lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    install: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/>'
   };
   function ico(name, cls) { return '<svg class="i ' + (cls || "") + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || "") + "</svg>"; }
 
@@ -350,13 +351,16 @@
       "<nav>" + views.map(navLink).join("") + "</nav>" +
       '<div class="side__foot">' + esc(S.me.full_name || S.me.email) + "<br><small>" + esc((ROLES[S.me.role] || "") + (lockedUni() ? " · " + UNI[lockedUni()] : "")) +
       '</small><br><button type="button" id="logout">' + ico("logout", "i--sm") + "Se déconnecter</button></div></aside>" +
-      '<header class="topbar"><img src="' + LOGO + '" alt=""><b>' + brandHtml() + '</b><span class="sp"></span><span class="who">' +
+      '<header class="topbar"><img src="' + LOGO + '" alt=""><b>' + brandHtml() + '</b><span class="sp"></span><button type="button" class="install-btn btn btn--sm" title="Installer l\'application" aria-label="Installer l\'application">' + ico("install", "i--sm") + "Installer</button>" +
+      '<span class="who">' +
       esc(firstName(S.me.full_name) || S.me.email) + "<br>" + esc((ROLES[S.me.role] || "") + (lockedUni() ? " · " + UNI[lockedUni()] : "")) + "</span></header>" +
       '<main class="main" id="view" tabindex="-1"></main>' +
       '<nav class="tabbar" aria-label="Navigation">' + tabs.map(navLink).join("") +
       (views.length > 5 ? '<button type="button" id="more-btn">' + ico("grid") + "<span>Plus</span></button>" : "") + "</nav>" +
       '<button type="button" class="fab" id="fab" hidden></button></div>';
     $("#logout").addEventListener("click", logout);
+    $$(".install-btn").forEach(function (b) { b.addEventListener("click", installHelp); });
+    showInstallBtn();
     if ($("#more-btn")) $("#more-btn").addEventListener("click", function () {
       openModal({
         title: "Plus",
@@ -1660,6 +1664,8 @@
       '<div><button type="button" class="btn btn--primary" id="save-me">' + ico("check") + "Enregistrer</button></div></form></div>" +
       '<div class="card"><form class="form" id="pwf"><h2>Mot de passe</h2><label class="f">Nouveau mot de passe (8 caractères min.)<input type="password" name="pw" autocomplete="new-password"></label>' +
       '<div><button type="button" class="btn" id="save-pw">' + ico("lock") + "Changer</button></div></form></div>" +
+      (isInstalled() ? "" : '<div class="card"><h2 style="margin-bottom:6px">Application sur le téléphone</h2><p class="muted small" style="margin-top:0">Installez BOLOU and CO sur l\'écran d\'accueil pour l\'ouvrir en un toucher, en plein écran.</p>' +
+        '<button type="button" class="btn btn--primary" id="install2">' + ico("install") + "Installer l'application</button></div>") +
       '<p style="margin-top:16px"><button class="btn btn--bad" id="logout2">' + ico("logout") + "Se déconnecter</button></p>";
     $("#save-me").addEventListener("click", async function () {
       var f = formData($("#af"));
@@ -1673,6 +1679,7 @@
       if (res.error) fail(res.error); else toast("Mot de passe changé", "ok");
     });
     $("#logout2").addEventListener("click", logout);
+    if ($("#install2")) $("#install2").addEventListener("click", installHelp);
   }
 
   /* ========================================================================
@@ -1776,6 +1783,32 @@
     if (lockedUni()) S.uni = lockedUni();
     try { await loadRefs(); } catch (e) { fail(e); }
     shell(); route(); realtime();
+  }
+
+  /* ------------------------------------------------------------------------
+     Installation sur le téléphone (application « PWA »)
+     ------------------------------------------------------------------------ */
+  var installEvt = null;
+  function isInstalled() { return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true; }
+  function isIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; showInstallBtn(); });
+  window.addEventListener("appinstalled", function () { installEvt = null; showInstallBtn(); toast("Application installée", "ok"); });
+  function showInstallBtn() { $$(".install-btn").forEach(function (b) { b.hidden = isInstalled(); }); }
+  function installHelp() {
+    if (installEvt) {
+      installEvt.prompt();
+      installEvt.userChoice.then(function () { installEvt = null; showInstallBtn(); });
+      return;
+    }
+    var steps = isIOS()
+      ? "<ol><li>Ouvrez cette page dans <b>Safari</b> (sur iPhone, l'installation passe par Safari).</li><li>Touchez le bouton <b>Partager</b> (carré avec une flèche vers le haut, en bas de l'écran).</li><li>Choisissez <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</li></ol>"
+      : "<ol><li>Ouvrez cette page dans <b>Google Chrome</b>.</li><li>Touchez le menu <b>⋮</b> (trois points, en haut à droite).</li><li>Choisissez <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>, puis <b>Installer</b>.</li></ol>" +
+        '<p class="muted small">Si l\'option n\'apparaît pas, rechargez la page une fois et attendez quelques secondes.</p>';
+    openModal({
+      title: "Installer l'application",
+      body: '<div class="note note--info" style="margin-bottom:12px">' + ico("install") + "<span>L'icône BOLOU and CO apparaîtra sur votre écran d'accueil. L'application s'ouvrira en plein écran, comme une application normale.</span></div>" + steps,
+      actions: [{ label: "Compris", cls: "btn--primary", onClick: closeModal }]
+    });
   }
 
   /* ------------------------------------------------------------------------
