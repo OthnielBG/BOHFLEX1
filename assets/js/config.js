@@ -5,10 +5,10 @@
 window.BOHFLEX_CONFIG = {
   // Numéro WhatsApp de la closeuse, format international SANS "+" ni espaces.
   // Exemple Côte d'Ivoire : 225 + 10 chiffres → "2250700000000"
-  whatsappNumber: "2250700000000", // [À REMPLACER]
+  whatsappNumber: "2250788670849",
 
   // Numéro affiché sur le site (format lisible)
-  phoneDisplay: "+225 07 00 00 00 00", // [À REMPLACER]
+  phoneDisplay: "+225 07 88 67 08 49",
 
   // URL du webhook (Google Apps Script / Make / Zapier...). Laisser vide pour désactiver.
   // Voir docs/google-sheet-webhook.gs pour un exemple prêt à l'emploi.
@@ -21,7 +21,7 @@ window.BOHFLEX_CONFIG = {
   univers: "bienetre", // "bienetre" (semelles) ou "passion" (sacoches)
 
   // ID du pixel Meta (Facebook). Laisser vide pour désactiver.
-  metaPixelId: "",
+  metaPixelId: "1779196666667619",
 
   // Prix unitaire de référence (sert au prix barré / ancrage)
   unitPrice: 4500, // [À VALIDER]
@@ -43,5 +43,5 @@ window.BOHFLEX_CONFIG = {
   deliveredCount: "1 000",
 
   // Surligne les textes santé marqués [À VALIDER] (mettre false avant mise en ligne)
-  showReviewMarkers: true
+  showReviewMarkers: false
 };

@@ -25,6 +25,15 @@
     '<symbol id="i-facebook" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M14 8h3V4h-3c-2.8 0-4 1.7-4 4.2V10H7.5v4H10v8h4v-8h2.8l.7-4H14V8.6c0-.4.3-.6.6-.6z"/></symbol>' +
     '<symbol id="i-instagram" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></symbol>' +
     '<symbol id="i-tiktok" viewBox="0 0 24 24"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.5 2.6 2.2 4.3 5 4.5"/></symbol>' +
+    '<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>' +
+    '<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2.5"/><path d="M9 22v-7l-1.5-.5V10a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v4.5L15 15v7M12 15v7"/></symbol>' +
+    '<symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.7 7-6.5 0-3.6-2.6-5.6-4-8.5-.6 2.3-1.8 3.5-3 4 .3-3-1-6-4-9 .3 3.7-1.5 5.8-2.6 7.6A7.4 7.4 0 0 0 5 15.5C5 19.3 8 22 12 22z"/><path d="M12 22a3 3 0 0 1-3-3c0-1.8 1.6-2.8 2-4.5 1.2 1 4 2.6 4 4.5a3 3 0 0 1-3 3z"/></symbol>' +
+    '<symbol id="i-shoe" viewBox="0 0 24 24"><path d="M2 18v-4.5c0-.8.4-1.2 1-1.4L5 11V5h4.5l1 3.5c2.6.6 5.5 1.4 8 2.7A5 5 0 0 1 22 15.5V18z"/><path d="M2 18h20M9 11l1.5-1M11 13l1.5-1"/></symbol>' +
+    '<symbol id="i-battery" viewBox="0 0 24 24"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M5.5 10.5v3"/></symbol>' +
+    '<symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h11a3 3 0 1 0-3-3M3 16h14a3 3 0 1 1-3 3M3 12h17"/></symbol>' +
+    '<symbol id="i-helmet" viewBox="0 0 24 24"><path d="M3 16a9 9 0 0 1 18 0"/><path d="M2 16h20v2.5H2zM10 7v5M14 7v5"/></symbol>' +
+    '<symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 13H6z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></symbol>' +
+    '<symbol id="i-cup" viewBox="0 0 24 24"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2v3M12 2v3"/></symbol>' +
     '</svg>';
   document.body.insertAdjacentHTML("afterbegin", s);
 })();

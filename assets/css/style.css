@@ -3,9 +3,10 @@
    Charte : orange #E85D04 / blanc / noir
    ========================================================================== */
 :root {
-  --orange: #E85D04;
-  --orange-dark: #C04B00;
-  --orange-light: #FFF1E8;
+  --orange: #E8571A;        /* orange BOHFLEX (logo « B. ») */
+  --orange-dark: #C4440E;
+  --orange-deep: #D44A10;
+  --orange-light: #FFF0E8;
   --black: #111111;
   --ink: #1F1F1F;
   --grey: #5E5E5E;
@@ -16,7 +17,7 @@
   --wa: #25D366;
   --radius: 14px;
   --shadow: 0 6px 24px rgba(0, 0, 0, .08);
-  --font-title: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+  --font-title: "Archivo", "Arial Black", "Helvetica Neue", Arial, sans-serif;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --max: 1120px;
 }
@@ -82,11 +83,14 @@ p { margin: 0 0 1em; }
   min-height: 54px;
 }
 .btn:active { transform: scale(.98); }
-.btn--primary { background: var(--orange); color: var(--white); box-shadow: 0 6px 18px rgba(232, 93, 4, .35); }
+.btn--primary { background: var(--orange); color: var(--white); box-shadow: 0 6px 18px rgba(232, 87, 26, .35); }
 .btn--primary:hover { background: var(--orange-dark); }
 .btn--dark { background: var(--black); color: var(--white); }
 .btn--outline { background: transparent; color: var(--black); border-color: var(--black); }
-.btn--white { background: var(--white); color: var(--orange); }
+.btn--white { background: var(--white); color: var(--orange-dark); box-shadow: 0 8px 22px rgba(0, 0, 0, .18); }
+.btn--white:hover { background: #FFF6F1; }
+.btn--ghost { background: transparent; color: var(--white); border-color: rgba(255, 255, 255, .7); }
+.btn--ghost:hover { background: rgba(255, 255, 255, .1); }
 .btn--wa { background: var(--wa); color: var(--white); }
 .btn--block { width: 100%; }
 .btn .icon { width: 22px; height: 22px; }
@@ -108,8 +112,9 @@ p { margin: 0 0 1em; }
   font-family: var(--font-title); font-weight: 800; font-size: 1.9rem; letter-spacing: 1px;
   color: var(--black); text-decoration: none; display: flex; align-items: center; gap: 8px;
 }
+.logo span { font-weight: 900; letter-spacing: -.01em; font-size: 1.5rem; }
 .logo b { color: var(--orange); font-weight: inherit; }
-.logo__mark { width: 30px; height: 30px; }
+.logo__mark { width: 34px; height: 34px; border-radius: 8px; }
 .nav { display: none; }
 .nav a {
   color: var(--ink); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 8px;
@@ -526,4 +531,81 @@ body.show-review .av::after {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { animation: none !important; transition: none !important; }
+}
+
+/* ==========================================================================
+   Identité BOHFLEX « B. » — héro orange, signes, caractéristiques, visuels
+   ========================================================================== */
+h1, h2, h3, h4 { font-weight: 900; letter-spacing: -.015em; }
+h1 { font-size: clamp(2rem, 7vw, 3.3rem); line-height: 1.02; }
+h2 { font-size: clamp(1.6rem, 5.4vw, 2.4rem); line-height: 1.05; }
+h3 { font-size: 1.12rem; text-transform: none; letter-spacing: 0; font-weight: 800; }
+.eyebrow { font-weight: 800; letter-spacing: 1.2px; font-size: .82rem; }
+
+/* Héro */
+.hero--brand {
+  background: radial-gradient(120% 90% at 85% 10%, #F47A3C 0%, var(--orange) 45%, var(--orange-deep) 100%);
+  color: var(--white); padding: 26px 0 40px;
+}
+.hero--brand .hero__title { color: var(--white); }
+.hero--brand .hero__lead { color: rgba(255, 255, 255, .92); }
+.hero__kicker {
+  display: inline-block; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 999px; padding: 5px 12px; font-size: .78rem; font-weight: 700; letter-spacing: .6px;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.hero__prices { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 6px; }
+.hero__prices > span {
+  background: rgba(0, 0, 0, .16); border-radius: 12px; padding: 7px 12px; font-size: .95rem; font-variant-numeric: tabular-nums;
+}
+.hero__prices > span.is-best { background: var(--white); color: var(--orange-dark); }
+.hero--brand .trust-row li { color: var(--white); }
+.hero--brand .trust-row .icon { color: var(--white); }
+.hero--brand .hero__visual img.hero__img { width: 100%; height: auto; aspect-ratio: 1 / 1; max-width: 340px; margin: 0 auto; border-radius: 22px; box-shadow: 0 24px 60px rgba(80, 20, 0, .35); }
+@media (min-width: 900px) { .hero--brand .hero__visual img.hero__img { max-width: 520px; } }
+img.framed, .gallery img { height: auto; }
+.hero--brand .btn--white { min-width: 230px; }
+@media (min-width: 900px) {
+  .hero--brand { padding: 56px 0 72px; }
+  .hero--brand .hero__grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Signes */
+.signs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 900px) { .signs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+.sign {
+  display: grid; gap: 2px; justify-items: center; text-align: center; padding: 18px 12px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--white);
+}
+.sign__ico { width: 58px; height: 58px; border-radius: 50%; background: var(--orange-light); color: var(--orange); display: grid; place-items: center; margin-bottom: 8px; }
+.sign__ico .icon { width: 30px; height: 30px; }
+.sign b { font-size: 1rem; line-height: 1.2; }
+.sign span:last-child { color: var(--grey); font-size: .86rem; }
+
+/* Bloc image + texte */
+.split { display: grid; gap: 26px; align-items: center; }
+@media (min-width: 900px) { .split { grid-template-columns: 1fr 1fr; gap: 48px; } }
+.framed { width: 100%; height: auto; border-radius: 20px; box-shadow: var(--shadow); }
+.features { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 14px; }
+.features li { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; }
+.features .icon { width: 44px; height: 44px; padding: 10px; border-radius: 12px; background: var(--white); color: var(--orange); box-shadow: var(--shadow); }
+.features b { display: block; font-size: 1.02rem; }
+.features span { color: var(--grey); font-size: .92rem; }
+
+/* Deux visuels côte à côte */
+.duo { display: grid; gap: 18px; }
+.duo figure { margin: 0; }
+@media (min-width: 760px) { .duo { grid-template-columns: 1fr 1fr; gap: 24px; } }
+
+/* Métiers (icônes) */
+.job { background: var(--white); border-radius: var(--radius); padding: 18px 10px; border: 1px solid var(--line); }
+.job__ico { width: 56px; height: 56px; border-radius: 50%; background: var(--orange); color: var(--white); display: grid; place-items: center; margin: 0 auto 10px; }
+.job__ico .icon { width: 28px; height: 28px; }
+
+/* Galerie produit avec vraies photos */
+.gallery__main img, .gallery__thumbs img { width: 100%; height: auto; border-radius: 14px; }
+.gallery__thumbs button { padding: 0; overflow: hidden; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn { transition: transform .16s cubic-bezier(.23, 1, .32, 1), background .15s, box-shadow .15s; }
 }

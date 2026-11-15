@@ -27,20 +27,21 @@ def head(title, desc, extra=""):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<meta name="theme-color" content="#E85D04">
+<meta name="theme-color" content="#E8571A">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_CI">
 <meta property="og:site_name" content="BOHFLEX">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="assets/img/og-image.png">
+<meta property="og:image" content="assets/img/og-image.jpg">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
+<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=1779196666667619&ev=PageView&noscript=1"></noscript>
 {extra}</head>
 """
 
@@ -52,7 +53,7 @@ def header(active):
 <header class="header">
   <div class="container header__inner">
     <a class="logo" href="index.html" aria-label="BOHFLEX — accueil">
-      <img class="logo__mark" src="assets/img/logo-mark.svg" alt="" width="30" height="30"><span>BOH<b>FLEX</b></span>
+      <img class="logo__mark" src="assets/img/logo-mark.svg" alt="" width="34" height="34"><span>BOHFLEX<b>.</b></span>
     </a>
     <nav class="nav" aria-label="Navigation principale">{links}</nav>
     <div class="header__actions">
@@ -68,7 +69,7 @@ FOOTER = f"""<footer class="footer">
   <div class="container">
     <div class="footer__grid">
       <div>
-        <a class="logo" href="index.html"><img class="logo__mark" src="assets/img/logo-mark.svg" alt="" width="30" height="30"><span>BOH<b>FLEX</b></span></a>
+        <a class="logo" href="index.html"><img class="logo__mark" src="assets/img/logo-mark.svg" alt="" width="34" height="34"><span>BOHFLEX<b>.</b></span></a>
         <p>Semelles massantes de confort pour celles et ceux qui restent debout toute la journée. Livraison gratuite partout en Côte d'Ivoire, paiement à la livraison.</p>
         <div class="socials">
           <a href="#" aria-label="Facebook">{ic("facebook")}</a>
@@ -139,7 +140,7 @@ def page(fname, title, desc, body, active=None, body_class="", extra_head=""):
 TRUST = f"""<ul class="trust-row">
   <li>{ic("truck")} Livraison gratuite</li>
   <li>{ic("cash")} Paiement à la livraison</li>
-  <li>{ic("shield")} Satisfait ou remboursé</li>
+  <li>{ic("pin")} Toute la Côte d'Ivoire</li>
 </ul>"""
 
 def offer_card(oid, pairs, best=False):
@@ -167,66 +168,126 @@ OFFERS = f"""<div class="offers">
 </div>
 <p class="center small muted" style="margin-top:16px">Prix barré = prix unitaire de référence × nombre de paires.</p>"""
 
-REVIEWS_DATA = [
-    ("A", "Aminata K.", "Infirmière · Cocody", "Je fais des gardes de 12h. Le soir mes pieds étaient en feu. Avec les semelles je sens vraiment la différence, je ne les enlève plus."),
-    ("K", "Koffi B.", "Agent de sécurité · Yopougon", "Je reste debout toute la nuit au portail. Livré en 24h, j'ai payé à la livraison sans problème. Je recommande."),
-    ("M", "Mariam T.", "Commerçante · Adjamé", "Au marché c'est debout du matin au soir. J'ai pris les 3 paires pour moi et mes deux sœurs. Très bon rapport qualité-prix."),
-    ("S", "Serge D.", "Ouvrier BTP · Bingerville", "Dans les chaussures de sécurité c'est beaucoup plus confortable. Les chocs sur le chantier se sentent moins."),
-    ("F", "Fatou C.", "Serveuse · Marcory", "Facile à découper à ma pointure. Le livreur a appelé avant de passer, très sérieux."),
-    ("Y", "Yao A.", "Footballeur amateur · Bouaké", "Je les mets dans mes baskets pour le sport et le travail. Livré même à Bouaké, gratuitement."),
-]
+# Avis clients : à remplir avec de VRAIS avis (prénom, ville, texte), avec l'accord des clients.
+# Tant que la liste est vide, aucune section d'avis n'est affichée sur le site.
+REVIEWS_DATA = []
 
 def reviews(n=3):
+    if not REVIEWS_DATA:
+        return ""
     cards = ""
     for letter, name, meta, text in REVIEWS_DATA[:n]:
         cards += f"""<article class="card review">
   <div class="review__head"><div class="avatar" aria-hidden="true">{letter}</div><div><div class="review__name">{name}</div><div class="review__meta">{meta}</div></div></div>
-  <div class="stars" aria-label="5 étoiles sur 5">★★★★★</div>
   <p>« {text} »</p>
-  <span class="demo-tag">Avis de démonstration — à remplacer</span>
 </article>"""
     return f'<div class="grid grid--3">{cards}</div>'
+
+def reviews_section(n=3):
+    if not REVIEWS_DATA:
+        return ""
+    return f"""<section class="section" id="avis">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">Avis clients</span><h2>Ils portent BOHFLEX</h2></div>
+    {reviews(n)}
+  </div>
+</section>"""
 
 REASSURE = f"""<section class="section section--orange">
   <div class="container">
     <div class="reassure">
       <div class="reassure__item">{ic("truck")}<h3>Livraison gratuite</h3><p>Partout en Côte d'Ivoire</p></div>
       <div class="reassure__item">{ic("cash")}<h3>Paiement à la livraison</h3><p>Vous payez quand vous recevez</p></div>
-      <div class="reassure__item">{ic("shield")}<h3>Satisfait ou remboursé</h3><p>Voir conditions</p></div>
+      <div class="reassure__item">{ic("shield")}<h3>Vérifiez avant de payer</h3><p>Vous ouvrez le colis devant le livreur</p></div>
       <div class="reassure__item">{ic("pin")}<h3>Toute la CI</h3><p>Abidjan et intérieur du pays</p></div>
     </div>
   </div>
 </section>"""
 
+def pic(name, alt, cls="", eager=False, w=1000):
+    attrs = 'fetchpriority="high"' if eager else 'loading="lazy" decoding="async"'
+    return (f'<img class="{cls}" src="assets/img/{name}-600.webp" srcset="assets/img/{name}-600.webp 600w, assets/img/{name}-1000.webp 1000w" '
+            f'sizes="(min-width: 900px) 520px, 100vw" alt="{alt}" width="{w}" height="{w}" {attrs}>')
+
+ALT_HERO = "Semelles BOHFLEX orange et blanches posées sur un bloc orange"
+ALT_DETAILS = "Semelle BOHFLEX : soutien de la voûte, nodules de massage, aération respirante, amorti moelleux, talon renforcé, découpable à votre pointure"
+ALT_VS = "Comparatif BOHFLEX contre semelles ordinaires : confortable toute la journée, garde sa forme longtemps, masse le pied à chaque pas, soulage les pieds fatigués, agréable dès la première utilisation"
+ALT_HOW = "Comment utiliser : 1. retirez l'ancienne semelle de la chaussure, 2. insérez la semelle BOHFLEX, 3. si besoin, découpez-la à votre pointure, 4. profitez d'un confort toute la journée"
+
+SIGNS = [
+    ("foot", "Talons douloureux", "en fin de journée"),
+    ("sun", "Premiers pas difficiles", "au réveil, le matin"),
+    ("user", "Debout toute la journée", "au travail, sans pause"),
+    ("fire", "Pieds qui chauffent", "dans les chaussures fermées"),
+    ("shoe", "Chaussures inconfortables", "de travail ou de sécurité"),
+    ("battery", "Jambes lourdes", "et fatigue le soir"),
+]
+signs_html = "".join(f'<li class="sign"><span class="sign__ico">{ic(i)}</span><b>{t}</b><span>{d}</span></li>' for i, t, d in SIGNS)
+
+FEATURES = [
+    ("dots", "Nodules de massage", "Ils massent la plante du pied à chaque pas."),
+    ("arch", "Soutien de la voûte", "Une forme qui épouse et soutient le pied."),
+    ("wave", "Amorti moelleux", "La mousse absorbe les chocs, même sur sol dur."),
+    ("wind", "Aération respirante", "Des perforations qui laissent respirer le pied."),
+    ("shield", "Talon renforcé", "Plus de maintien là où le pied appuie le plus."),
+    ("scissors", "Découpable à votre pointure", "Du 35 au 46, d'un simple coup de ciseaux."),
+]
+features_html = "".join(f'<li>{ic(i)}<div><b>{t}</b><span>{d}</span></div></li>' for i, t, d in FEATURES)
+
 # ============================ ACCUEIL ============================
 JOBS = [
-    ("Sécurité", "Gardes de jour & de nuit"),
-    ("BTP", "Chantiers, chaussures de sécurité"),
-    ("Santé", "Infirmières, aides-soignants"),
-    ("Commerce", "Marchés, boutiques"),
-    ("Restauration", "Serveurs, cuisiniers"),
-    ("Sport", "Foot, marche, course"),
+    ("shield", "Sécurité", "Gardes de jour & de nuit"),
+    ("helmet", "BTP", "Chantiers, chaussures de sécurité"),
+    ("heart", "Santé", "Infirmières, aides-soignants"),
+    ("bag", "Commerce", "Marchés, boutiques"),
+    ("cup", "Restauration", "Serveurs, cuisiniers"),
+    ("bolt", "Sport", "Foot, marche, course"),
 ]
 jobs_html = "".join(
-    f'<div class="job"><div class="ph">Photo : {t.lower()}</div><h3>{t}</h3><p>{d}</p></div>' for t, d in JOBS
+    f'<div class="job"><span class="job__ico">{ic(i)}</span><h3>{t}</h3><p>{d}</p></div>' for i, t, d in JOBS
 )
 
 index_body = f"""
-<section class="hero">
+<section class="hero hero--brand">
   <div class="container hero__grid">
-    <div>
-      <div class="rating-line"><span class="stars">★★★★★</span> Déjà <span data-count></span>+ clients livrés en Côte d'Ivoire</div>
-      <h1 class="hero__title">Des douleurs aux pieds après une <span class="text-orange">longue journée debout</span> ?</h1>
-      <p class="hero__lead av">Les semelles massantes BOHFLEX apportent un soulagement immédiat et du confort toute la journée.</p>
+    <div class="hero__text">
+      <span class="hero__kicker">Semelles massantes de confort</span>
+      <h1 class="hero__title">Fini les pieds en feu après une longue journée debout.</h1>
+      <p class="hero__lead">Amorti moelleux, nodules de massage et soutien de la voûte : glissez BOHFLEX dans vos chaussures et sentez la différence dès les premiers pas.</p>
+      <div class="hero__prices">
+        <span><b>2 paires</b> <span data-price="2"></span></span>
+        <span class="is-best"><b>3 paires</b> <span data-price="3"></span></span>
+      </div>
       <div class="hero__cta">
-        <a class="btn btn--primary" href="commander.html" data-order-link>Commander maintenant</a>
-        <a class="btn btn--outline" href="produit.html">Voir le produit</a>
+        <a class="btn btn--white" href="commander.html" data-order-link>Commander maintenant</a>
+        <a class="btn btn--ghost" href="#offres">Voir les offres</a>
       </div>
       {TRUST}
     </div>
-    <div class="hero__visual">
-      <img src="assets/img/semelle.svg" alt="Semelles massantes BOHFLEX orange et noir" width="480" height="480" fetchpriority="high">
-      <div class="hero__sticker"><span>2 paires<b data-price="2"></b></span></div>
+    <div class="hero__visual">{pic("bohflex-hero", ALT_HERO, "hero__img", eager=True)}</div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Ça vous parle ?</span>
+      <h2>Vous vous reconnaissez ?</h2>
+      <p class="muted">Si vous cochez au moins un de ces signes, vos pieds réclament plus de confort.</p>
+    </div>
+    <ul class="signs">{signs_html}</ul>
+    <p class="center" style="margin-top:22px"><a class="btn btn--primary" href="commander.html" data-order-link>J'offre du confort à mes pieds</a></p>
+    <p class="center small muted" style="margin-top:12px">BOHFLEX est un produit de confort. En cas de douleur persistante, consultez un professionnel de santé.</p>
+  </div>
+</section>
+
+<section class="section section--soft" id="details">
+  <div class="container split">
+    <div class="split__media">{pic("bohflex-details", ALT_DETAILS, "framed")}</div>
+    <div>
+      <span class="eyebrow">Dans le détail</span>
+      <h2>Pensée pour ceux qui marchent et restent debout</h2>
+      <ul class="features">{features_html}</ul>
     </div>
   </div>
 </section>
@@ -235,13 +296,11 @@ index_body = f"""
   <div class="container">
     <div class="section-head">
       <span class="eyebrow">Pourquoi BOHFLEX</span>
-      <h2>Vos pieds méritent mieux</h2>
-      <p class="muted">Debout 8h, 10h, 12h par jour ? Glissez BOHFLEX dans vos chaussures et sentez la différence dès les premiers pas.</p>
+      <h2>La différence se sent au premier pas</h2>
     </div>
-    <div class="grid grid--3">
-      <div class="card benefit"><div class="benefit__icon">{ic("bolt")}</div><h3 class="av">Soulagement immédiat</h3><p>Une sensation de détente dès que vous les enfilez.</p></div>
-      <div class="card benefit"><div class="benefit__icon">{ic("clock")}</div><h3>Confort toute la journée</h3><p>Du matin au soir, au travail comme à la maison.</p></div>
-      <div class="card benefit"><div class="benefit__icon">{ic("wave")}</div><h3>Absorption des chocs</h3><p>Une mousse amortissante qui accompagne chaque pas.</p></div>
+    <div class="duo">
+      <figure>{pic("bohflex-vs", ALT_VS, "framed")}</figure>
+      <figure>{pic("bohflex-utiliser", ALT_HOW, "framed")}</figure>
     </div>
   </div>
 </section>
@@ -256,21 +315,6 @@ index_body = f"""
   </div>
 </section>
 
-<section class="section section--dark" id="mecanisme">
-  <div class="container mech">
-    <div>
-      <span class="eyebrow">Comment ça marche</span>
-      <h2>3 couches de confort sous vos pieds</h2>
-      <div class="steps">
-        <div class="step"><div class="step__num">1</div><div><h3 class="av">Points de massage</h3><p class="av">Des picots qui stimulent les zones de pression sous le pied à chaque pas.</p></div></div>
-        <div class="step"><div class="step__num">2</div><div><h3 class="av">Soutien de la voûte</h3><p class="av">Une forme étudiée qui soutient la voûte plantaire.</p></div></div>
-        <div class="step"><div class="step__num">3</div><div><h3>Mousse amortissante</h3><p>Une mousse qui absorbe les chocs à chaque pas, sur le carrelage comme sur le goudron.</p></div></div>
-      </div>
-    </div>
-    <div class="ph ph--dark" style="aspect-ratio:4/3">Visuel : vue éclatée de la semelle (picots / voûte / mousse)</div>
-  </div>
-</section>
-
 <section class="section" id="offres">
   <div class="container">
     <div class="section-head">
@@ -282,17 +326,7 @@ index_body = f"""
   </div>
 </section>
 
-<section class="section section--soft">
-  <div class="container">
-    <p class="counter">Déjà <b><span data-count></span>+</b> clients livrés en Côte d'Ivoire</p>
-    {reviews(3)}
-    <div class="chat-shots">
-      <div class="ph">Capture WhatsApp client (anonymisée)</div>
-      <div class="ph">Capture WhatsApp client (anonymisée)</div>
-      <div class="ph">Capture WhatsApp client (anonymisée)</div>
-    </div>
-  </div>
-</section>
+{reviews_section(3)}
 
 {REASSURE}
 
@@ -307,12 +341,12 @@ index_body = f"""
 """
 
 ORG_LD = """<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"BOHFLEX","areaServed":"CI","logo":"assets/img/icon-512.png"}
+{"@context":"https://schema.org","@type":"Organization","name":"BOHFLEX","areaServed":"CI","logo":"assets/img/icon-512.png","image":"assets/img/og-image.jpg"}
 </script>
 """
 
-page("index.html", "BOHFLEX — Semelles massantes de confort | Livraison gratuite Côte d'Ivoire",
-     "Semelles massantes BOHFLEX pour ceux qui restent debout toute la journée. 2 paires 6 500 FCFA, 3 paires 7 500 FCFA. Livraison gratuite à Abidjan et partout en Côte d'Ivoire, paiement à la livraison.",
+page("index.html", "BOHFLEX — Semelles massantes de confort | Paiement à la livraison en Côte d'Ivoire",
+     "Semelles massantes BOHFLEX : amorti moelleux, nodules de massage, soutien de la voûte, découpables du 35 au 46. 2 paires 6 500 FCFA, 3 paires 7 500 FCFA. Livraison gratuite partout en Côte d'Ivoire, paiement à la livraison.",
      index_body, extra_head=ORG_LD)
 
 # ============================ PRODUIT ============================
@@ -347,23 +381,23 @@ product_body = f"""
   <nav class="breadcrumb" aria-label="Fil d'Ariane"><a href="index.html">Accueil</a> › Semelles Confort BOHFLEX</nav>
   <section class="product">
     <div class="gallery">
-      <div class="gallery__main"><img src="assets/img/semelle.svg" alt="Semelles Confort BOHFLEX" width="480" height="480"></div>
+      <div class="gallery__main">{pic("bohflex-hero", ALT_HERO, eager=True)}</div>
       <div class="gallery__thumbs">
-        <button type="button" aria-current="true" aria-label="Photo 1"><img src="assets/img/semelle.svg" alt="" width="120" height="120"></button>
-        <button type="button" aria-current="false" aria-label="Photo 2"><div class="ph">Photo packaging</div></button>
-        <button type="button" aria-current="false" aria-label="Photo 3"><div class="ph">Photo en situation (chaussure)</div></button>
-        <button type="button" aria-current="false" aria-label="Photo 4"><div class="ph">Photo dessous / picots</div></button>
+        <button type="button" aria-current="true" aria-label="Photo : les semelles">{pic("bohflex-hero", ALT_HERO)}</button>
+        <button type="button" aria-current="false" aria-label="Photo : les caractéristiques">{pic("bohflex-details", ALT_DETAILS)}</button>
+        <button type="button" aria-current="false" aria-label="Photo : comment les utiliser">{pic("bohflex-utiliser", ALT_HOW)}</button>
+        <button type="button" aria-current="false" aria-label="Photo : BOHFLEX contre les semelles ordinaires">{pic("bohflex-vs", ALT_VS)}</button>
       </div>
     </div>
     <div class="product__info">
-      <div class="rating-line"><span class="stars">★★★★★</span> 4,8/5 · avis clients <span class="demo-tag">démo</span></div>
       <h1>Semelles Confort BOHFLEX</h1>
-      <div class="product__tagline av">Soulagement immédiat</div>
-      <p class="av">Les semelles massantes BOHFLEX se glissent dans toutes vos chaussures — de travail, de sécurité, baskets ou chaussures de ville — pour vous apporter un confort durable toute la journée.</p>
+      <div class="product__tagline">Le confort toute la journée</div>
+      <p>Les semelles massantes BOHFLEX se glissent dans toutes vos chaussures — de travail, de sécurité, baskets ou chaussures de ville — et se découpent à votre pointure.</p>
       <ul class="check-list">
-        <li>{ic("dots")}<span class="av">Picots de massage sous toute la plante du pied</span></li>
-        <li>{ic("arch")}<span class="av">Soutien de la voûte plantaire</span></li>
-        <li>{ic("wave")}<span>Mousse amortissante qui absorbe les chocs</span></li>
+        <li>{ic("dots")}<span>Nodules de massage sous la plante du pied</span></li>
+        <li>{ic("arch")}<span>Soutien de la voûte plantaire</span></li>
+        <li>{ic("wave")}<span>Amorti moelleux qui absorbe les chocs</span></li>
+        <li>{ic("wind")}<span>Aération respirante et talon renforcé</span></li>
         <li>{ic("scissors")}<span>Se découpe suivant votre pointure (35 → 46)</span></li>
       </ul>
       <form id="product-picker" onsubmit="return false">
@@ -379,27 +413,21 @@ product_body = f"""
 </div>
 
 <section class="section section--soft">
-  <div class="container">
-    <div class="section-head"><span class="eyebrow">Bénéfices</span><h2>Ce que BOHFLEX change dans votre journée</h2></div>
-    <div class="grid grid--3">
-      <div class="card benefit"><div class="benefit__icon">{ic("bolt")}</div><h3 class="av">Soulagement immédiat</h3><p class="av">Les picots massent la plante du pied dès les premiers pas.</p></div>
-      <div class="card benefit"><div class="benefit__icon">{ic("clock")}</div><h3>Confort toute la journée</h3><p>Pensées pour les longues journées debout, du matin au soir.</p></div>
-      <div class="card benefit"><div class="benefit__icon">{ic("wave")}</div><h3>Absorption des chocs</h3><p>Moins d'impact à chaque pas, même sur sol dur.</p></div>
+  <div class="container split">
+    <div class="split__media">{pic("bohflex-details", ALT_DETAILS, "framed")}</div>
+    <div>
+      <span class="eyebrow">Dans le détail</span>
+      <h2>Ce que BOHFLEX change dans votre journée</h2>
+      <ul class="features">{features_html}</ul>
     </div>
   </div>
 </section>
 
-<section class="section section--dark">
-  <div class="container mech">
-    <div class="ph ph--dark" style="aspect-ratio:4/3">Visuel / vidéo : mécanisme de la semelle</div>
-    <div>
-      <span class="eyebrow">Mécanisme</span>
-      <h2>Comment ça marche ?</h2>
-      <div class="steps">
-        <div class="step"><div class="step__num">1</div><div><h3 class="av">Massage</h3><p class="av">Les points de massage stimulent les zones de pression sous le pied.</p></div></div>
-        <div class="step"><div class="step__num">2</div><div><h3 class="av">Soutien</h3><p class="av">La forme de la semelle soutient la voûte plantaire.</p></div></div>
-        <div class="step"><div class="step__num">3</div><div><h3>Amorti</h3><p>La mousse absorbe les chocs à chaque pas.</p></div></div>
-      </div>
+<section class="section">
+  <div class="container">
+    <div class="duo">
+      <figure>{pic("bohflex-utiliser", ALT_HOW, "framed")}</figure>
+      <figure>{pic("bohflex-vs", ALT_VS, "framed")}</figure>
     </div>
   </div>
 </section>
@@ -413,7 +441,7 @@ product_body = f"""
         <tbody>{sizes_rows}</tbody>
       </table>
     </div>
-    <div class="tip">{ic("scissors")}<p><strong>La semelle se découpe suivant la pointure.</strong> Posez votre ancienne semelle dessus, tracez le contour et découpez avec des ciseaux le long du trait correspondant à votre pointure. <span class="muted">(Longueurs indicatives — à vérifier sur le produit réel.)</span></p></div>
+    <div class="tip">{ic("scissors")}<p><strong>La semelle se découpe suivant la pointure.</strong> Posez votre ancienne semelle dessus, tracez le contour et découpez avec des ciseaux le long du trait correspondant à votre pointure. <span class="muted">(Longueurs indicatives.)</span></p></div>
   </div>
 </section>
 
@@ -424,30 +452,21 @@ product_body = f"""
   </div>
 </section>
 
-<section class="section" id="avis">
-  <div class="container">
-    <div class="section-head"><span class="eyebrow">Avis clients</span><h2>Ils ont essayé BOHFLEX</h2></div>
-    <div class="rating-summary">
-      <div class="rating-summary__score">4,8</div>
-      <div><div class="stars" style="font-size:1.4rem">★★★★★</div><div class="muted small">Note de démonstration — à remplacer par vos vrais avis</div></div>
-    </div>
-    {reviews(6)}
-  </div>
-</section>
+{reviews_section(6)}
 
 {REASSURE}
 """
 
 PRODUCT_LD = """<script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Product","name":"Semelles Confort BOHFLEX","brand":{"@type":"Brand","name":"BOHFLEX"},
-"image":"assets/img/semelle.svg","description":"Semelles massantes de confort, se découpent suivant la pointure (35 à 46).",
+"image":"assets/img/bohflex-hero-1000.webp","description":"Semelles massantes de confort, se découpent suivant la pointure (35 à 46).",
 "offers":[{"@type":"Offer","name":"2 paires","price":"6500","priceCurrency":"XOF","availability":"https://schema.org/InStock","areaServed":"CI"},
 {"@type":"Offer","name":"3 paires","price":"7500","priceCurrency":"XOF","availability":"https://schema.org/InStock","areaServed":"CI"}]}
 </script>
 """
 
 page("produit.html", "Semelles Confort BOHFLEX — 2 paires 6 500 FCFA | Livraison gratuite CI",
-     "Semelles massantes BOHFLEX : picots de massage, soutien de la voûte, mousse amortissante. Se découpent de la pointure 35 à 46. Paiement à la livraison partout en Côte d'Ivoire.",
+     "Semelles massantes BOHFLEX : nodules de massage, soutien de la voûte, amorti moelleux. Se découpent de la pointure 35 à 46. Paiement à la livraison partout en Côte d'Ivoire.",
      product_body, extra_head=PRODUCT_LD)
 
 # ============================ COMMANDER ============================
@@ -525,7 +544,7 @@ order_body = f"""
     <aside class="card summary" aria-label="Résumé de la commande">
       <h2>Ma commande</h2>
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
-        <img src="assets/img/semelle.svg" alt="" width="72" height="72" style="background:var(--orange-light);border-radius:12px">
+        <img src="assets/img/bohflex-hero-600.webp" alt="" width="72" height="72" style="object-fit:cover;border-radius:12px">
         <div><strong>Semelles Confort BOHFLEX</strong><div class="muted small" id="sum-offer"></div></div>
       </div>
       <div class="summary__row"><span>Prix normal</span><s class="muted" id="sum-old"></s></div>
@@ -535,7 +554,7 @@ order_body = f"""
       <ul class="trust-row">
         <li>{ic("cash")} Paiement en espèces au livreur</li>
         <li>{ic("phone")} Appel de confirmation avant livraison</li>
-        <li>{ic("shield")} Satisfait ou remboursé</li>
+        <li>{ic("pin")} Toute la Côte d'Ivoire</li>
       </ul>
     </aside>
   </div>
@@ -599,9 +618,9 @@ page("suivi.html", "Suivi de commande — BOHFLEX", "Suivez votre commande de se
 about_body = f"""
 <section class="page-hero"><div class="container"><span class="eyebrow">La marque</span><h1>BOHFLEX, le confort de ceux qui tiennent debout</h1><p>Une marque née en Côte d'Ivoire, pour les travailleurs et travailleuses qui font tourner le pays.</p></div></section>
 <section class="section"><div class="container prose">
-  <div class="ph" style="aspect-ratio:16/9;margin-bottom:24px">Photo : l'équipe BOHFLEX / fondateur</div>
+  <div style="margin-bottom:24px">{pic("bohflex-hero", ALT_HERO, "framed")}</div>
   <h2>Notre histoire</h2>
-  <p><em>[Texte de démonstration — à personnaliser]</em> Tout est parti d'un constat simple : autour de nous, les agents de sécurité, les infirmières, les commerçantes du marché, les ouvriers sur les chantiers rentraient tous le soir avec la même plainte : « J'ai mal aux pieds ». BOHFLEX est né pour leur apporter une solution simple, accessible et livrée jusqu'à leur porte.</p>
+  <p>Tout est parti d'un constat simple : autour de nous, les agents de sécurité, les infirmières, les commerçantes du marché, les ouvriers sur les chantiers rentraient tous le soir avec la même plainte : « J'ai mal aux pieds ». BOHFLEX est né pour leur apporter une solution simple, accessible et livrée jusqu'à leur porte.</p>
   <h2>Notre engagement</h2>
   <ul>
     <li><strong>Un prix juste</strong> : du confort accessible à tous, à partir de <span data-price="2"></span> les 2 paires.</li>
@@ -637,7 +656,7 @@ FAQ = [
     ("Entretien & garantie", [
         ("Comment entretenir mes semelles ?", "Lavez-les à la main à l'eau tiède savonneuse, puis laissez-les sécher à l'air libre, à l'abri du soleil direct. Ne pas mettre en machine ni au sèche-linge. <em>[À vérifier selon le produit]</em>"),
         ("Combien de temps durent-elles ?", "Avec un usage quotidien, comptez plusieurs mois de confort. Nous conseillons de les remplacer dès que la mousse s'affaisse. <em>[À vérifier]</em>"),
-        ("Et si je ne suis pas satisfait ?", "BOHFLEX est satisfait ou remboursé. Contactez-nous sur WhatsApp et consultez les conditions dans nos <a href=\"mentions-legales.html#cgv\">CGV</a>."),
+        ("Et si je ne suis pas satisfait ?", "Vous vérifiez le colis à la livraison avant de payer. Pour toute question après réception, écrivez-nous sur WhatsApp : nous trouvons une solution ensemble. Voir aussi nos <a href=\"mentions-legales.html#cgv\">CGV</a>."),
         ("Est-ce un dispositif médical ?", "Non. Les semelles BOHFLEX sont un produit de confort. En cas de douleur persistante, consultez un professionnel de santé."),
     ]),
 ]

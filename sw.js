@@ -1,10 +1,10 @@
 /* BOHFLEX — Service worker : rend le site installable et utilisable hors connexion (pages déjà visitées). */
-var CACHE = "bohflex-v1";
+var CACHE = "bohflex-v2";
 var CORE = [
   "./", "index.html", "produit.html", "commander.html", "faq.html", "contact.html",
   "a-propos.html", "suivi.html", "mentions-legales.html",
   "assets/css/style.css", "assets/js/config.js", "assets/js/icons.js", "assets/js/main.js",
-  "assets/img/semelle.svg", "assets/img/logo-mark.svg", "assets/img/favicon.svg",
+  "assets/img/bohflex-hero-600.webp", "assets/img/logo-mark.svg", "assets/img/favicon.svg",
   "assets/img/icon-192.png", "assets/img/icon-512.png", "manifest.webmanifest"
 ];
 
