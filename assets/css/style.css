@@ -619,7 +619,8 @@ img.framed, .gallery img { height: auto; }
 .hero-video__overlay { padding-left: max(18px, env(safe-area-inset-left, 0px)) !important; padding-right: max(18px, env(safe-area-inset-right, 0px)) !important; }
 .hero-video__frame { position: relative; margin: 0; background: #1a1a1a; overflow: hidden; }
 .hero-video__play[hidden] { display: none; }
-.hero-video__media { display: block; width: 100%; height: min(78svh, 177.8vw); object-fit: cover; }
+/* Plein écran : sur téléphone, toute la hauteur entre l'en-tête (≈116 px) et la barre « Commander » du bas (≈76 px) */
+.hero-video__media { display: block; width: 100%; height: calc(100vh - 192px); height: calc(100svh - 192px); min-height: 420px; object-fit: cover; object-position: center; }
 .hero-video__overlay {
   position: absolute; inset: auto 0 0 0; padding: 70px 18px 18px;
   background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, .55) 45%, rgba(0, 0, 0, .78) 100%);
@@ -637,7 +638,8 @@ img.framed, .gallery img { height: auto; }
   .hero-video { background: radial-gradient(120% 90% at 85% 10%, #F47A3C 0%, var(--orange) 45%, var(--orange-deep) 100%); padding: 44px 0; }
   .hero-video__grid { display: grid; grid-template-columns: auto 1fr; gap: 56px; align-items: center; }
   .hero-video__frame { margin: 0; border-radius: 24px; box-shadow: 0 24px 60px rgba(80, 20, 0, .35); }
-  .hero-video__media { width: auto; height: min(78vh, 680px); aspect-ratio: 9 / 16; }
+  .hero-video__media { width: auto; height: calc(100vh - 190px); max-height: 760px; min-height: 0; aspect-ratio: 1 / 1; object-fit: cover; }
+  .hero-video { min-height: calc(100vh - 102px); display: grid; align-items: center; }
   .hero-video__overlay .btn { display: none; }
   .hero-video__side { display: block; color: var(--white); }
   .hero-video__side .hero__title { color: var(--white); }

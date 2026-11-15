@@ -210,7 +210,7 @@ def hero_media():
     """Vidéo de bannière si le fichier existe, sinon la photo produit."""
     if (OUT / HERO_VIDEO).exists():
         return (f'<video class="hero-video__media" autoplay muted loop playsinline preload="auto" '
-                f'poster="assets/img/bohflex-hero-1000.webp" aria-label="Vidéo de présentation des semelles BOHFLEX">'
+                f'poster="assets/video/bohflex-banniere.webp" aria-label="Vidéo de présentation des semelles BOHFLEX">'
                 f'<source src="{HERO_VIDEO}" type="video/mp4"></video>')
     return pic("bohflex-hero", "Semelles BOHFLEX orange et blanches posées sur un bloc orange", "hero-video__media", eager=True)
 
