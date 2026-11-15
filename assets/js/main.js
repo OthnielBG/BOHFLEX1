@@ -97,6 +97,26 @@
     });
   }
 
+  /* ---------- Bannière vidéo : économe en données, en pause hors de l'écran ---------- */
+  function initHeroVideo() {
+    var v = $("video.hero-video__media");
+    if (!v) return;
+    var btn = $(".hero-video__play");
+    var saveData = navigator.connection && navigator.connection.saveData;
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function showPlay(show) { if (btn) btn.hidden = !show; }
+    if (saveData || reduce) { v.removeAttribute("autoplay"); v.preload = "none"; v.pause(); showPlay(true); }
+    if (btn) btn.addEventListener("click", function () { v.play(); showPlay(false); });
+    v.addEventListener("play", function () { showPlay(false); });
+    var p = v.play && !v.hasAttribute("autoplay") ? null : v.play();
+    if (p && p.catch) p.catch(function () { showPlay(true); });
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (!e.isIntersecting) v.pause(); else if (v.hasAttribute("autoplay")) v.play().catch(function () {}); });
+      }, { threshold: 0.2 }).observe(v);
+    }
+  }
+
   /* ---------- Sélecteur d'offre (page produit) ---------- */
   function initProductPicker() {
     var picker = $("#product-picker");
@@ -428,6 +448,7 @@
   applyConfig();
   initMenu();
   initGallery();
+    initHeroVideo();
   initProductPicker();
   initOrderForm();
   initTracking();

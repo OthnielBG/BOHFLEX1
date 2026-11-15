@@ -49,7 +49,7 @@ def header(active):
     links = "".join(
         f'<a href="{h}"{" aria-current=\"page\"" if h == active else ""}>{t}</a>' for h, t in NAV
     )
-    return f"""<div class="topbar">🚚 <strong>Livraison gratuite</strong> partout en Côte d'Ivoire · Paiement à la livraison</div>
+    return f"""<div class="topbar"><strong>Offre spéciale : 3 paires à 7 500 FCFA</strong> · Livraison et expédition partout en Côte d'Ivoire</div>
 <header class="header">
   <div class="container header__inner">
     <a class="logo" href="index.html" aria-label="BOHFLEX — accueil">
@@ -204,6 +204,16 @@ REASSURE = f"""<section class="section section--orange">
   </div>
 </section>"""
 
+HERO_VIDEO = "assets/video/bohflex-banniere.mp4"
+
+def hero_media():
+    """Vidéo de bannière si le fichier existe, sinon la photo produit."""
+    if (OUT / HERO_VIDEO).exists():
+        return (f'<video class="hero-video__media" autoplay muted loop playsinline preload="auto" '
+                f'poster="assets/img/bohflex-hero-1000.webp" aria-label="Vidéo de présentation des semelles BOHFLEX">'
+                f'<source src="{HERO_VIDEO}" type="video/mp4"></video>')
+    return pic("bohflex-hero", "Semelles BOHFLEX orange et blanches posées sur un bloc orange", "hero-video__media", eager=True)
+
 def pic(name, alt, cls="", eager=False, w=1000):
     attrs = 'fetchpriority="high"' if eager else 'loading="lazy" decoding="async"'
     return (f'<img class="{cls}" src="assets/img/{name}-600.webp" srcset="assets/img/{name}-600.webp 600w, assets/img/{name}-1000.webp 1000w" '
@@ -248,23 +258,26 @@ jobs_html = "".join(
 )
 
 index_body = f"""
-<section class="hero hero--brand">
-  <div class="container hero__grid">
-    <div class="hero__text">
+<section class="hero-video">
+  <div class="container hero-video__grid">
+    <div class="hero-video__frame">
+      {hero_media()}
+      <div class="hero-video__overlay">
+        <div class="hero__prices">
+          <span><b>2 paires</b> <span data-price="2"></span></span>
+          <span class="is-best"><b>3 paires</b> <span data-price="3"></span></span>
+        </div>
+        <a class="btn btn--primary btn--block" href="commander.html" data-order-link>Commander maintenant</a>
+      </div>
+      <button class="hero-video__play" type="button" aria-label="Lire la vidéo" hidden>{ic("play")}</button>
+    </div>
+    <div class="hero-video__side">
       <span class="hero__kicker">Semelles massantes de confort</span>
       <h1 class="hero__title">Fini les pieds en feu après une longue journée debout.</h1>
       <p class="hero__lead">Amorti moelleux, nodules de massage et soutien de la voûte : glissez BOHFLEX dans vos chaussures et sentez la différence dès les premiers pas.</p>
-      <div class="hero__prices">
-        <span><b>2 paires</b> <span data-price="2"></span></span>
-        <span class="is-best"><b>3 paires</b> <span data-price="3"></span></span>
-      </div>
-      <div class="hero__cta">
-        <a class="btn btn--white" href="commander.html" data-order-link>Commander maintenant</a>
-        <a class="btn btn--ghost" href="#offres">Voir les offres</a>
-      </div>
+      <a class="btn btn--primary" href="commander.html" data-order-link>Commander maintenant</a>
       {TRUST}
     </div>
-    <div class="hero__visual">{pic("bohflex-hero", ALT_HERO, "hero__img", eager=True)}</div>
   </div>
 </section>
 
