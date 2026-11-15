@@ -40,102 +40,47 @@
 </header>
 <main>
 
-<div class="container" id="order-view">
-  <div class="order__title">
-    <h1>Finaliser ma commande</h1>
-    <p class="muted">Remplissez le formulaire, ça prend moins d'une minute.</p>
+<div class="container order-one" id="order-view">
+  <div class="order-item">
+    <img src="assets/img/bohflex-hero-600.webp" alt="" width="64" height="64">
+    <div class="order-item__txt"><b>Semelles Confort BOHFLEX</b><span id="sum-offer"></span></div>
+    <div class="order-item__price"><b id="sum-price"></b><a href="produit.html#offre" id="change-offer">Changer</a></div>
   </div>
-  <div class="order">
-    <form id="order-form" novalidate>
-      <div class="cod-banner"><svg class="icon" aria-hidden="true"><use href="#i-cash"/></svg><div>Vous payez <span>seulement à la livraison</span>. Aucun paiement en ligne.</div></div>
-      <p class="notice" id="welcome-back" hidden>Bon retour <strong></strong> ! Vos informations ont été pré-remplies.</p>
-
-      <div class="form-step">
-        <h2 class="form-step__title"><i>1</i> Mon offre</h2>
-        <fieldset class="offer-picker"><legend class="sr-only">Choix de l'offre</legend><label class="offer-opt">
-  <input type="radio" name="offre" value="2">
-  <span class="offer-opt__box">
-    <span class="offer-opt__radio" aria-hidden="true"></span>
-    <span class="offer-opt__label"><b>2 paires</b><small data-unit="2"></small></span>
-    <span class="offer-opt__price"><b data-price="2"></b><s data-old="2"></s></span>
-  </span>
-  
-</label><label class="offer-opt">
-  <input type="radio" name="offre" value="3" checked>
-  <span class="offer-opt__box">
-    <span class="offer-opt__radio" aria-hidden="true"></span>
-    <span class="offer-opt__label"><b>3 paires</b><small data-unit="3"></small></span>
-    <span class="offer-opt__price"><b data-price="3"></b><s data-old="3"></s></span>
-  </span>
-  <span class="offer-opt__tag">Le plus avantageux</span>
-</label></fieldset>
+  <form id="order-form" novalidate>
+    <p class="notice" id="welcome-back" hidden>Bon retour <strong></strong> ! Vos informations sont pré-remplies.</p>
+    <div class="field">
+      <label for="name">Nom complet</label>
+      <input class="input" id="name" name="name" type="text" autocomplete="name" placeholder="Ex : Aminata Koné" required>
+      <div class="field__error">Indiquez votre nom</div>
+    </div>
+    <div class="field">
+      <label for="phone">Téléphone</label>
+      <div class="phone-wrap">
+        <span class="phone-wrap__prefix">+225</span>
+        <input class="input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="07 00 00 00 00" required>
       </div>
-
-      <div class="form-step">
-        <h2 class="form-step__title"><i>2</i> Ma pointure</h2>
-        <div class="sizes-grid" id="sizes"></div>
-        <p class="hint small muted" style="margin-top:-4px">Une pointure par paire : vous pouvez commander pour toute la famille. La semelle se découpe ensuite à la taille exacte.</p>
-        <div class="field" id="field-color">
-          <label for="color">Coloris <span class="req">*</span></label>
-          <select class="select" id="color" name="color"><option value="">Choisir…</option></select>
-          <div class="field__error">Choisissez un coloris</div>
-        </div>
+      <div class="field__error">10 chiffres (ex : 07 00 00 00 00)</div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="city">Ville / Quartier</label>
+        <input class="input" id="city" name="city" type="text" list="cities" autocomplete="address-level2" placeholder="Ex : Yopougon" required>
+        <datalist id="cities"><option value="Abidjan - Cocody"><option value="Abidjan - Yopougon"><option value="Abidjan - Abobo"><option value="Abidjan - Adjamé"><option value="Abidjan - Plateau"><option value="Abidjan - Marcory"><option value="Abidjan - Koumassi"><option value="Abidjan - Treichville"><option value="Abidjan - Port-Bouët"><option value="Abidjan - Attécoubé"><option value="Abidjan - Riviera"><option value="Abidjan - Angré"><option value="Bingerville"><option value="Anyama"><option value="Songon"><option value="Grand-Bassam"><option value="Bouaké"><option value="Yamoussoukro"><option value="San-Pédro"><option value="Daloa"><option value="Korhogo"><option value="Man"><option value="Gagnoa"><option value="Abengourou"><option value="Divo"><option value="Soubré"><option value="Agboville"><option value="Dabou"><option value="Bondoukou"><option value="Odienné"></datalist>
+        <div class="field__error">Ville ou quartier</div>
       </div>
-
-      <div class="form-step">
-        <h2 class="form-step__title"><i>3</i> Mes informations de livraison</h2>
-        <div class="field">
-          <label for="name">Nom complet <span class="req">*</span></label>
-          <input class="input" id="name" name="name" type="text" autocomplete="name" placeholder="Ex : Aminata Koné" required>
-          <div class="field__error">Indiquez votre nom complet</div>
-        </div>
-        <div class="field">
-          <label for="phone">Téléphone / WhatsApp <span class="req">*</span></label>
-          <div class="phone-wrap">
-            <span class="phone-wrap__prefix">+225</span>
-            <input class="input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="07 00 00 00 00" required>
-          </div>
-          <div class="field__error">Numéro à 10 chiffres (ex : 07 00 00 00 00)</div>
-          <div class="hint">Le livreur vous appellera sur ce numéro.</div>
-        </div>
-        <div class="field">
-          <label for="city">Ville / Quartier <span class="req">*</span></label>
-          <input class="input" id="city" name="city" type="text" list="cities" autocomplete="address-level2" placeholder="Ex : Abidjan - Yopougon Niangon" required>
-          <datalist id="cities"><option value="Abidjan - Cocody"><option value="Abidjan - Yopougon"><option value="Abidjan - Abobo"><option value="Abidjan - Adjamé"><option value="Abidjan - Plateau"><option value="Abidjan - Marcory"><option value="Abidjan - Koumassi"><option value="Abidjan - Treichville"><option value="Abidjan - Port-Bouët"><option value="Abidjan - Attécoubé"><option value="Abidjan - Riviera"><option value="Abidjan - Angré"><option value="Bingerville"><option value="Anyama"><option value="Songon"><option value="Grand-Bassam"><option value="Bouaké"><option value="Yamoussoukro"><option value="San-Pédro"><option value="Daloa"><option value="Korhogo"><option value="Man"><option value="Gagnoa"><option value="Abengourou"><option value="Divo"><option value="Soubré"><option value="Agboville"><option value="Dabou"><option value="Bondoukou"><option value="Odienné"></datalist>
-          <div class="field__error">Indiquez votre ville ou quartier</div>
-        </div>
-        <div class="field">
-          <label for="address">Adresse précise / point de repère <span class="req">*</span></label>
-          <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : derrière la pharmacie, près du carrefour…" required>
-          <div class="field__error">Donnez un point de repère pour le livreur</div>
-        </div>
-        <div class="field">
-          <label for="notes">Remarques <span class="muted small">(optionnel)</span></label>
-          <textarea class="textarea" id="notes" name="notes" placeholder="Ex : livrer après 17h, appeler avant de passer…"></textarea>
-        </div>
+      <div class="field">
+        <label for="address">Point de repère</label>
+        <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : près de la pharmacie" required>
+        <div class="field__error">Un repère pour le livreur</div>
       </div>
-
-      <button class="btn btn--primary btn--block" type="submit">Valider ma commande · <span id="submit-total"></span></button>
-      <p class="center small muted" style="margin-top:10px">💵 Vous payez seulement à la livraison · 🚚 Livraison gratuite</p>
-    </form>
-
-    <aside class="card summary" aria-label="Résumé de la commande">
-      <h2>Ma commande</h2>
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
-        <img src="assets/img/bohflex-hero-600.webp" alt="" width="72" height="72" style="object-fit:cover;border-radius:12px">
-        <div><strong>Semelles Confort BOHFLEX</strong><div class="muted small" id="sum-offer"></div></div>
-      </div>
-      <div class="summary__row"><span>Prix normal</span><s class="muted" id="sum-old"></s></div>
-      <div class="summary__row"><span>Prix de l'offre</span><strong id="sum-price"></strong></div>
-      <div class="summary__row"><span>Livraison</span><span class="free">Gratuite</span></div>
-      <div class="summary__total"><span>À payer à la livraison</span><b id="sum-total"></b></div>
-      <ul class="trust-row">
-        <li><svg class="icon" aria-hidden="true"><use href="#i-cash"/></svg> Paiement en espèces au livreur</li>
-        <li><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg> Appel de confirmation avant livraison</li>
-        <li><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg> Toute la Côte d'Ivoire</li>
-      </ul>
-    </aside>
-  </div>
+    </div>
+    <div class="field">
+      <label>Pointure de chaque paire</label>
+      <div class="sizes-row" id="sizes"></div>
+    </div>
+    <button class="btn btn--primary btn--block btn--xl" type="submit">Commander · <span id="submit-total"></span></button>
+    <p class="order-note"><svg class="icon" aria-hidden="true"><use href="#i-cash"/></svg> Paiement à la livraison · <svg class="icon" aria-hidden="true"><use href="#i-truck"/></svg> Livraison gratuite</p>
+  </form>
 </div>
 
 <div class="container" id="order-success" hidden>
@@ -154,12 +99,16 @@
   <div class="modal__backdrop" data-close></div>
   <div class="modal__panel">
     <button class="modal__close" type="button" data-close aria-label="Fermer">×</button>
-    <h2 id="recap-title">Vérifiez votre commande</h2>
+    <h2 id="recap-title">Confirmez votre commande</h2>
     <div class="recap"><dl id="recap-list"></dl></div>
-    <p class="small muted">Vérifiez vos informations : notre équipe vous appellera à ce numéro pour confirmer la livraison.</p>
+    <div class="recap-total"><span>À payer à la livraison</span><b id="recap-total"></b></div>
+    <ul class="recap-info">
+      <li><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg> Un conseiller vous appelle pour confirmer la livraison.</li>
+      <li><svg class="icon" aria-hidden="true"><use href="#i-cash"/></svg> Vous payez en espèces, à la réception du colis.</li>
+    </ul>
     <p class="notice notice--error" id="order-error" hidden>L'envoi n'a pas abouti (connexion internet ?). Réessayez, ou envoyez votre commande sur WhatsApp : <a id="order-wa" href="#" target="_blank" rel="noopener">envoyer sur WhatsApp</a>.</p>
     <div class="modal__actions">
-      <button class="btn btn--primary btn--block" type="button" id="order-confirm"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Confirmer ma commande</button>
+      <button class="btn btn--primary btn--block btn--xl" type="button" id="order-confirm"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Je confirme</button>
       <button class="btn btn--outline btn--block" type="button" data-close>Modifier</button>
     </div>
   </div>

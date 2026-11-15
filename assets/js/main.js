@@ -126,78 +126,59 @@
     function update() {
       var checked = $("input[name=offre]:checked", picker);
       var id = checked ? checked.value : CFG.defaultOffer;
-      links.forEach(function (a) { a.href = "commander.html?offre=" + id; });
+      var qs = new URLSearchParams(window.location.search);
+      qs.set("offre", id);
+      links.forEach(function (a) { a.href = "commander.html?" + qs.toString(); });
     }
     picker.addEventListener("change", update);
     update();
   }
 
-  /* ---------- Formulaire de commande ---------- */
+  /* ---------- Formulaire de commande (une seule page ; l'offre est choisie sur la page produit) ---------- */
   function initOrderForm() {
     var form = $("#order-form");
     if (!form) return;
 
     var sizesBox = $("#sizes");
-    var colorField = $("#field-color");
-    var colorSelect = $("#color");
     var modal = $("#recap-modal");
-    var current = null;
-
-    // Offre pré-sélectionnée via ?offre=2 ou ?offre=3
-    var params = new URLSearchParams(window.location.search);
-    var initial = getOffer(params.get("offre") || CFG.defaultOffer).id;
-    var radio = $("input[name=offre][value='" + initial + "']", form);
-    if (radio) radio.checked = true;
-
-    // Coloris
     var colors = CFG.colors || [];
-    if (colors.length <= 1) {
-      colorField.hidden = true;
-    } else {
-      colors.forEach(function (c) {
-        var o = document.createElement("option");
-        o.value = o.textContent = c;
-        colorSelect.appendChild(o);
-      });
-    }
+    var current = null;
+    var params = new URLSearchParams(window.location.search);
+    var offer = getOffer(params.get("offre") || CFG.defaultOffer);
+    function selectedOffer() { return offer; }
+    function setText(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
 
-    function selectedOffer() {
-      var r = $("input[name=offre]:checked", form);
-      return getOffer(r ? r.value : CFG.defaultOffer);
-    }
+    var back = new URLSearchParams(window.location.search); back.delete("offre");
+    var change = $("#change-offer");
+    if (change) change.href = "produit.html" + (back.toString() ? "?" + back : "") + "#offre";
 
     // Une pointure par paire (pratique pour commander pour la famille)
     function renderSizes() {
-      var offer = selectedOffer();
-      var previous = $$("select", sizesBox).map(function (s) { return s.value; });
       sizesBox.innerHTML = "";
+      sizesBox.style.gridTemplateColumns = "repeat(" + offer.pairs + ", minmax(0, 1fr))";
       for (var i = 0; i < offer.pairs; i++) {
         var wrap = document.createElement("div");
         wrap.className = "field";
         wrap.innerHTML =
-          '<label for="size-' + i + '">Paire ' + (i + 1) + ' <span class="req">*</span></label>' +
-          '<select class="select" id="size-' + i + '" name="pointure" required>' +
-          '<option value="">Pointure…</option>' +
+          '<select class="select" name="pointure" required aria-label="Pointure de la paire ' + (i + 1) + '">' +
+          '<option value="">Paire ' + (i + 1) + '</option>' +
           (CFG.sizes || []).map(function (s) { return '<option value="' + s + '">' + s + "</option>"; }).join("") +
-          "</select>" +
-          '<div class="field__error">Choisissez une pointure</div>';
+          "</select>";
         sizesBox.appendChild(wrap);
-        var sel = wrap.querySelector("select");
-        sel.value = previous[i] || previous[0] || "";
       }
+      // Remplir la paire suivante avec la même pointure, modifiable
+      $$("select", sizesBox).forEach(function (sel, idx, all) {
+        sel.addEventListener("change", function () {
+          all.forEach(function (o, k) { if (k > idx && !o.value) o.value = sel.value; });
+        });
+      });
     }
 
-    function updateSummary() {
-      var offer = selectedOffer();
-      $("#sum-offer").textContent = offer.label;
-      $("#sum-old").textContent = fcfa(oldPrice(offer));
-      $("#sum-price").textContent = fcfa(offer.price);
-      $("#sum-total").textContent = fcfa(offer.price);
-      $("#submit-total").textContent = fcfa(offer.price);
-    }
+    setText("sum-offer", offer.label);
+    setText("sum-price", fcfa(offer.price));
+    setText("submit-total", fcfa(offer.price));
 
     form.addEventListener("change", function (e) {
-      if (e.target.name === "offre") { renderSizes(); updateSummary(); }
       var f = e.target.closest(".field");
       if (f) f.classList.remove("has-error");
     });
@@ -220,8 +201,7 @@
     }
 
     renderSizes();
-    updateSummary();
-    track("InitiateCheckout", { currency: "XOF", value: selectedOffer().price });
+    track("InitiateCheckout", { currency: "XOF", value: offer.price });
 
     function normalizePhone(v) {
       var d = String(v || "").replace(/\D/g, "");
@@ -239,7 +219,6 @@
       var firstBad = null;
       function check(el, bad) { if (setError(el, bad) && !firstBad) firstBad = el; }
       $$("select[name=pointure]", form).forEach(function (s) { check(s, !s.value); });
-      if (!colorField.hidden) check(colorSelect, !colorSelect.value);
       check(form.elements.name, form.elements.name.value.trim().length < 3);
       check(form.elements.phone, normalizePhone(form.elements.phone.value).length !== 10);
       check(form.elements.city, form.elements.city.value.trim().length < 2);
@@ -268,12 +247,12 @@
         pairs: offer.pairs,
         price: offer.price,
         sizes: $$("select[name=pointure]", form).map(function (s) { return s.value; }),
-        color: colorField.hidden ? (colors[0] || "") : colorSelect.value,
+        color: colors[0] || "",
         name: form.elements.name.value.trim(),
         phone: phone.replace(/(\d{2})(?=\d)/g, "$1 "),
         city: form.elements.city.value.trim(),
         address: form.elements.address.value.trim(),
-        notes: form.elements.notes.value.trim(),
+        notes: "",
         source: document.referrer || "direct",
         utm: window.location.search.replace(/^\?/, "")
       };
@@ -302,18 +281,13 @@
     function openModal(o) {
       var dl = $("#recap-list");
       var rows = [
-        ["Offre", o.offer + " — " + fcfa(o.price)],
-        ["Pointure(s)", o.sizes.join(", ")]
-      ];
-      if (colors.length > 1) rows.push(["Coloris", o.color]);
-      rows.push(
+        ["Produit", "Semelles BOHFLEX · " + o.offer],
+        ["Pointures", o.sizes.join(", ")],
         ["Nom", o.name],
         ["Téléphone", "+225 " + o.phone],
-        ["Ville / Quartier", o.city],
-        ["Adresse", o.address]
-      );
-      if (o.notes) rows.push(["Remarques", o.notes]);
-      rows.push(["Livraison", "Gratuite"], ["À payer à la livraison", fcfa(o.price)]);
+        ["Livraison", o.city + " · " + o.address + " (gratuite)"]
+      ];
+      setText("recap-total", fcfa(o.price));
       dl.innerHTML = "";
       rows.forEach(function (r) {
         var dt = document.createElement("dt"); dt.textContent = r[0];
@@ -448,7 +422,7 @@
   applyConfig();
   initMenu();
   initGallery();
-    initHeroVideo();
+  initHeroVideo();
   initProductPicker();
   initOrderForm();
   initTracking();

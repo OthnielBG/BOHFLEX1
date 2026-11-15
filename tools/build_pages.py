@@ -3,7 +3,7 @@
 
 Usage (depuis la racine du projet) : python3 tools/build_pages.py .
 """
-import sys, pathlib
+import sys, pathlib, csv, html
 
 OUT = pathlib.Path(sys.argv[1])
 
@@ -168,27 +168,98 @@ OFFERS = f"""<div class="offers">
 </div>
 <p class="center small muted" style="margin-top:16px">Prix barré = prix unitaire de référence × nombre de paires.</p>"""
 
-# Avis clients : à remplir avec de VRAIS avis (prénom, ville, texte), avec l'accord des clients.
-# Tant que la liste est vide, aucune section d'avis n'est affichée sur le site.
-REVIEWS_DATA = []
+# Avis clients.
+# - Si le fichier data/avis.csv existe (avis réels exportés de l'ancienne boutique, nettoyés : SANS e-mails),
+#   il est utilisé.
+# - Sinon, des AVIS D'EXEMPLE s'affichent, clairement signalés comme tels, pour voir la mise en page.
+AVIS_CSV = OUT / "data" / "avis.csv"
 
-def reviews(n=3):
-    if not REVIEWS_DATA:
-        return ""
+EXAMPLE_REVIEWS = [
+    ("Koffi A.", "Yopougon", 5, "Je suis vigile, je fais mes 12 heures debout. Depuis que j'ai mis les semelles dans mes rangers, le soir ce n'est plus pareil. Livraison rapide en plus.", "02/11/2026"),
+    ("Mariam T.", "Cocody", 5, "J'ai pris le pack 3 paires : une pour moi, une pour mon mari, une pour ma maman. Tout le monde est content. Le livreur a appelé avant de passer.", "28/10/2026"),
+    ("Serge K.", "Bouaké", 4, "Bonne qualité, j'ai découpé à ma pointure sans problème. Reçu en 3 jours à Bouaké. 4 étoiles parce que j'aurais aimé une autre couleur.", "25/10/2026"),
+    ("Aïcha D.", "Abobo", 5, "Je vends au marché toute la journée. Mes pieds me disent merci ! Je recommande à toutes les commerçantes.", "21/10/2026"),
+    ("Ibrahim S.", "Yamoussoukro", 5, "Mises dans mes chaussures de sécurité sur le chantier. Ça amortit vraiment, surtout sur le béton.", "18/10/2026"),
+    ("Fatou C.", "Marcory", 4, "Très moelleux. Les premiers jours on sent bien les petits picots, après on s'habitue et ça fait du bien.", "14/10/2026"),
+    ("Jean-Marc B.", "San-Pédro", 5, "Sérieux. On m'a appelé pour confirmer, j'ai payé à la livraison, rien à dire.", "09/10/2026"),
+    ("Estelle N.", "Angré", 5, "Toujours dans les couloirs au travail, je ne m'en sépare plus. J'en ai offert à deux collègues.", "03/10/2026"),
+]
+
+def _short_name(full):
+    parts = full.split()
+    if len(parts) >= 2 and len(parts[-1]) > 2:
+        return f"{parts[0]} {parts[-1][0].upper()}."
+    return full
+
+def load_reviews():
+    """Lit data/avis.csv (colonnes reconnues : nom/reviewer_name, ville/location, note/rating, texte/body, date/review_date)."""
+    if not AVIS_CSV.exists():
+        return None
+    out = []
+    with open(AVIS_CSV, newline="", encoding="utf-8-sig") as f:
+        sample = f.read(4096); f.seek(0)
+        try:
+            dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
+        except csv.Error:
+            dialect = csv.excel
+        for row in csv.DictReader(f, dialect=dialect):
+            k = {(a or "").strip().lower(): (b or "").strip() for a, b in row.items() if a}
+            g = lambda *names: next((k[n] for n in names if k.get(n)), "")
+            text = g("texte", "body", "review", "content", "text", "avis", "comment")
+            if not text:
+                continue
+            try:
+                rating = max(1, min(5, round(float(g("note", "rating", "stars", "score").replace(",", ".") or 5))))
+            except ValueError:
+                rating = 5
+            name = _short_name(g("nom", "reviewer_name", "author", "name", "auteur") or "Client")
+            date = g("date", "review_date", "created_at")[:10]
+            if len(date) == 10 and date[4] == "-":
+                date = f"{date[8:10]}/{date[5:7]}/{date[:4]}"
+            out.append((name, g("ville", "location", "city"), rating, text, date))
+    return out
+
+_real = load_reviews()
+REVIEWS_EXAMPLE = not _real
+REVIEWS_DATA = _real or EXAMPLE_REVIEWS
+
+def stars(n):
+    return f'<span class="stars" aria-label="{n} sur 5">{"★" * n}<span class="stars__off">{"★" * (5 - n)}</span></span>'
+
+def reviews(n=6):
     cards = ""
-    for letter, name, meta, text in REVIEWS_DATA[:n]:
-        cards += f"""<article class="card review">
-  <div class="review__head"><div class="avatar" aria-hidden="true">{letter}</div><div><div class="review__name">{name}</div><div class="review__meta">{meta}</div></div></div>
-  <p>« {text} »</p>
+    for name, city, rating, text, date in REVIEWS_DATA[:n]:
+        e = html.escape
+        meta = " · ".join(x for x in (e(city), e(date)) if x)
+        cards += f"""<article class="review">
+  <div class="review__top">{stars(rating)}{'' if REVIEWS_EXAMPLE else f'<span class="review__verified">{ic("check")} Achat vérifié</span>'}</div>
+  <p>{e(text)}</p>
+  <div class="review__head"><div class="avatar" aria-hidden="true">{e(name[:1])}</div><div><div class="review__name">{e(name)}</div><div class="review__meta">{meta}</div></div></div>
 </article>"""
-    return f'<div class="grid grid--3">{cards}</div>'
+    return f'<div class="reviews">{cards}</div>'
 
-def reviews_section(n=3):
+def reviews_summary():
+    total = len(REVIEWS_DATA)
+    avg = sum(r[2] for r in REVIEWS_DATA) / total
+    bars = ""
+    for k in range(5, 0, -1):
+        c = sum(1 for r in REVIEWS_DATA if r[2] == k)
+        bars += f'<li><span>{k} ★</span><span class="bar"><i style="width:{round(100 * c / total)}%"></i></span><span>{c}</span></li>'
+    return f"""<div class="rsum">
+  <div class="rsum__score"><b>{avg:.1f}</b>{stars(round(avg))}<span>{total} avis</span></div>
+  <ul class="rsum__bars">{bars}</ul>
+</div>"""
+
+def reviews_section(n=6):
     if not REVIEWS_DATA:
         return ""
+    note = ('<p class="notice center">Aperçu de mise en page : <strong>avis d\'exemple</strong>, '
+            'bientôt remplacés par les vrais avis de nos clients.</p>') if REVIEWS_EXAMPLE else ""
     return f"""<section class="section" id="avis">
   <div class="container">
     <div class="section-head"><span class="eyebrow">Avis clients</span><h2>Ils portent BOHFLEX</h2></div>
+    {note}
+    {reviews_summary()}
     {reviews(n)}
   </div>
 </section>"""
@@ -243,6 +314,27 @@ FEATURES = [
     ("scissors", "Découpable à votre pointure", "Du 35 au 46, d'un simple coup de ciseaux."),
 ]
 features_html = "".join(f'<li>{ic(i)}<div><b>{t}</b><span>{d}</span></div></li>' for i, t, d in FEATURES)
+
+PEOPLE = [
+    ("bohflex-securite", "Sécurité", "12 h debout, de jour comme de nuit", "Agent de sécurité tenant un paquet de semelles BOHFLEX devant une résidence"),
+    ("bohflex-btp", "BTP", "Sur le béton, en chaussures de sécurité", "Ouvrier de chantier en casque et gilet tenant un paquet de semelles BOHFLEX"),
+    ("bohflex-sante", "Santé", "Toujours en mouvement dans les couloirs", "Infirmière tenant un paquet de semelles BOHFLEX"),
+    ("bohflex-entrepot", "Logistique", "Entrepôts, magasins, manutention", "Magasinier dans un entrepôt, chaussures de travail"),
+    ("bohflex-sport", "Sport", "Marche, course, foot", "Coureur souriant pendant une course en ville"),
+]
+people_html = "".join(
+    f'<figure class="person">{pic(n, a)}<figcaption><b>{t}</b><span>{d}</span></figcaption></figure>' for n, t, d, a in PEOPLE
+)
+PEOPLE_SECTION = f"""<section class="section section--soft">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Pour qui ?</span>
+      <h2>Pour tous ceux qui tiennent debout</h2>
+      <p class="muted">Gardiens, infirmières, ouvriers, magasiniers, commerçantes, serveurs, sportifs…</p>
+    </div>
+    <div class="people">{people_html}</div>
+  </div>
+</section>"""
 
 # ============================ ACCUEIL ============================
 JOBS = [
@@ -318,15 +410,7 @@ index_body = f"""
   </div>
 </section>
 
-<section class="section section--soft">
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">Pour qui ?</span>
-      <h2>Pour tous ceux qui travaillent debout</h2>
-    </div>
-    <div class="grid grid--jobs">{jobs_html}</div>
-  </div>
-</section>
+{PEOPLE_SECTION}
 
 <section class="section" id="offres">
   <div class="container">
@@ -389,6 +473,28 @@ sizes_rows = "".join(
                     ("45/46", "28 – 29 cm", "Découper au trait 45 ou 46")]
 )
 
+PRODUCT_FAQ = [
+    ("Comment choisir ma pointure ?", "Choisissez votre pointure habituelle (de 35/36 à 45/46). La semelle se découpe ensuite aux ciseaux le long du trait de votre pointure exacte."),
+    ("Je peux prendre des pointures différentes ?", "Oui : vous choisissez une pointure pour chaque paire. Pratique pour équiper toute la famille."),
+    ("Comment se passe le paiement ?", "En espèces, au livreur, quand vous recevez votre colis. Aucun paiement en ligne."),
+    ("En combien de temps je suis livré ?", "Un conseiller vous appelle pour confirmer, puis vous êtes livré en général sous 24 h à Abidjan et 48 à 72 h à l'intérieur du pays."),
+    ("Dans quelles chaussures les mettre ?", "Chaussures de sécurité, de travail, baskets, chaussures de ville… Retirez la semelle d'origine si possible."),
+    ("Est-ce un produit médical ?", "Non, c'est un produit de confort. En cas de douleur persistante, consultez un professionnel de santé."),
+]
+product_faq_html = "".join(f"<details><summary>{q}</summary><div><p>{a}</p></div></details>" for q, a in PRODUCT_FAQ)
+
+HOW_ORDER = f"""<section class="section">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">Commander, c'est simple</span><h2>Vous ne payez qu'à la livraison</h2></div>
+    <ol class="howto">
+      <li><span>1</span><b>Choisissez votre offre</b><p>2 ou 3 paires, une pointure par paire.</p></li>
+      <li><span>2</span><b>Laissez vos coordonnées</b><p>Nom, téléphone et lieu de livraison. Moins d'une minute.</p></li>
+      <li><span>3</span><b>On vous appelle</b><p>Un conseiller confirme votre commande avec vous.</p></li>
+      <li><span>4</span><b>Payez à la réception</b><p>Vous vérifiez le colis, puis vous payez le livreur.</p></li>
+    </ol>
+  </div>
+</section>"""
+
 product_body = f"""
 <div class="container">
   <nav class="breadcrumb" aria-label="Fil d'Ariane"><a href="index.html">Accueil</a> › Semelles Confort BOHFLEX</nav>
@@ -398,14 +504,19 @@ product_body = f"""
       <div class="gallery__thumbs">
         <button type="button" aria-current="true" aria-label="Photo : les semelles">{pic("bohflex-hero", ALT_HERO)}</button>
         <button type="button" aria-current="false" aria-label="Photo : les caractéristiques">{pic("bohflex-details", ALT_DETAILS)}</button>
+        <button type="button" aria-current="false" aria-label="Photo : en situation">{pic("bohflex-securite", "Agent de sécurité tenant un paquet de semelles BOHFLEX")}</button>
         <button type="button" aria-current="false" aria-label="Photo : comment les utiliser">{pic("bohflex-utiliser", ALT_HOW)}</button>
-        <button type="button" aria-current="false" aria-label="Photo : BOHFLEX contre les semelles ordinaires">{pic("bohflex-vs", ALT_VS)}</button>
+        <button type="button" aria-current="false" aria-label="Photo : sur un chantier">{pic("bohflex-btp", "Ouvrier de chantier tenant un paquet de semelles BOHFLEX")}</button>
+        <button type="button" aria-current="false" aria-label="Photo : comparatif">{pic("bohflex-vs", ALT_VS)}</button>
+        <button type="button" aria-current="false" aria-label="Photo : à l'hôpital">{pic("bohflex-sante", "Infirmière tenant un paquet de semelles BOHFLEX")}</button>
+        <button type="button" aria-current="false" aria-label="Photo : en entrepôt">{pic("bohflex-entrepot", "Magasinier dans un entrepôt")}</button>
+        <button type="button" aria-current="false" aria-label="Photo : pour le sport">{pic("bohflex-sport", "Coureur pendant une course en ville")}</button>
       </div>
     </div>
-    <div class="product__info">
+    <div class="product__info" id="offre">
       <h1>Semelles Confort BOHFLEX</h1>
       <div class="product__tagline">Le confort toute la journée</div>
-      <p>Les semelles massantes BOHFLEX se glissent dans toutes vos chaussures — de travail, de sécurité, baskets ou chaussures de ville — et se découpent à votre pointure.</p>
+      <p>Les semelles massantes BOHFLEX se glissent dans toutes vos chaussures (de travail, de sécurité, baskets ou chaussures de ville) et se découpent à votre pointure.</p>
       <ul class="check-list">
         <li>{ic("dots")}<span>Nodules de massage sous la plante du pied</span></li>
         <li>{ic("arch")}<span>Soutien de la voûte plantaire</span></li>
@@ -419,13 +530,27 @@ product_body = f"""
           {picker()}
         </fieldset>
       </form>
-      <a class="btn btn--primary btn--block" href="commander.html?offre=3" data-order-link>Commander maintenant</a>
-      <div style="margin-top:14px">{TRUST}</div>
+      <a class="btn btn--primary btn--block btn--xl" href="commander.html?offre=3" data-order-link>Commander maintenant</a>
+      <p class="pay-note">{ic("cash")} Vous payez <b>uniquement à la livraison</b></p>
+      <div style="margin-top:10px">{TRUST}</div>
     </div>
   </section>
 </div>
 
 <section class="section section--soft">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Ça vous parle ?</span>
+      <h2>Vous vous reconnaissez ?</h2>
+      <p class="muted">Si vous cochez au moins un de ces signes, vos pieds réclament plus de confort.</p>
+    </div>
+    <ul class="signs">{signs_html}</ul>
+    <p class="center" style="margin-top:22px"><a class="btn btn--primary" href="commander.html" data-order-link>J'offre du confort à mes pieds</a></p>
+    <p class="center small muted" style="margin-top:12px">BOHFLEX est un produit de confort. En cas de douleur persistante, consultez un professionnel de santé.</p>
+  </div>
+</section>
+
+<section class="section">
   <div class="container split">
     <div class="split__media">{pic("bohflex-details", ALT_DETAILS, "framed")}</div>
     <div>
@@ -436,12 +561,27 @@ product_body = f"""
   </div>
 </section>
 
+{PEOPLE_SECTION}
+
 <section class="section">
   <div class="container">
+    <div class="section-head"><span class="eyebrow">Pourquoi BOHFLEX</span><h2>La différence se sent au premier pas</h2></div>
     <div class="duo">
-      <figure>{pic("bohflex-utiliser", ALT_HOW, "framed")}</figure>
       <figure>{pic("bohflex-vs", ALT_VS, "framed")}</figure>
+      <figure>{pic("bohflex-utiliser", ALT_HOW, "framed")}</figure>
     </div>
+    <p class="center" style="margin-top:22px"><a class="btn btn--primary" href="commander.html" data-order-link>Je commande mes semelles</a></p>
+  </div>
+</section>
+
+{reviews_section(8)}
+
+{HOW_ORDER}
+
+<section class="section section--soft" id="offres">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">Offres</span><h2>Choisissez votre pack</h2></div>
+    {OFFERS}
   </div>
 </section>
 
@@ -458,16 +598,23 @@ product_body = f"""
   </div>
 </section>
 
-<section class="section section--soft" id="offres">
-  <div class="container">
-    <div class="section-head"><span class="eyebrow">Offres</span><h2>Choisissez votre pack</h2></div>
-    {OFFERS}
+<section class="section section--soft">
+  <div class="container" style="max-width:800px">
+    <div class="section-head"><span class="eyebrow">Questions fréquentes</span><h2>Vous vous demandez…</h2></div>
+    <div class="faq">{product_faq_html}</div>
+    <p class="center small muted" style="margin-top:16px">Une autre question ? <a href="#" data-wa>Écrivez-nous sur WhatsApp</a></p>
   </div>
 </section>
 
-{reviews_section(6)}
-
 {REASSURE}
+
+<section class="section final-cta">
+  <div class="container">
+    <h2>Vos pieds vous portent toute la journée. À votre tour.</h2>
+    <p class="muted">Commandez en 1 minute. Un conseiller vous appelle, et vous payez seulement à la livraison.</p>
+    <a class="btn btn--primary btn--xl" href="commander.html" data-order-link>Commander maintenant</a>
+  </div>
+</section>
 """
 
 PRODUCT_LD = """<script type="application/ld+json">
@@ -491,86 +638,47 @@ CITIES = ["Abidjan - Cocody", "Abidjan - Yopougon", "Abidjan - Abobo", "Abidjan 
 datalist = "".join(f'<option value="{c}">' for c in CITIES)
 
 order_body = f"""
-<div class="container" id="order-view">
-  <div class="order__title">
-    <h1>Finaliser ma commande</h1>
-    <p class="muted">Remplissez le formulaire, ça prend moins d'une minute.</p>
+<div class="container order-one" id="order-view">
+  <div class="order-item">
+    <img src="assets/img/bohflex-hero-600.webp" alt="" width="64" height="64">
+    <div class="order-item__txt"><b>Semelles Confort BOHFLEX</b><span id="sum-offer"></span></div>
+    <div class="order-item__price"><b id="sum-price"></b><a href="produit.html#offre" id="change-offer">Changer</a></div>
   </div>
-  <div class="order">
-    <form id="order-form" novalidate>
-      <div class="cod-banner">{ic("cash")}<div>Vous payez <span>seulement à la livraison</span>. Aucun paiement en ligne.</div></div>
-      <p class="notice" id="welcome-back" hidden>Bon retour <strong></strong> ! Vos informations ont été pré-remplies.</p>
-
-      <div class="form-step">
-        <h2 class="form-step__title"><i>1</i> Mon offre</h2>
-        <fieldset class="offer-picker"><legend class="sr-only">Choix de l'offre</legend>{picker()}</fieldset>
+  <form id="order-form" novalidate>
+    <p class="notice" id="welcome-back" hidden>Bon retour <strong></strong> ! Vos informations sont pré-remplies.</p>
+    <div class="field">
+      <label for="name">Nom complet</label>
+      <input class="input" id="name" name="name" type="text" autocomplete="name" placeholder="Ex : Aminata Koné" required>
+      <div class="field__error">Indiquez votre nom</div>
+    </div>
+    <div class="field">
+      <label for="phone">Téléphone</label>
+      <div class="phone-wrap">
+        <span class="phone-wrap__prefix">+225</span>
+        <input class="input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="07 00 00 00 00" required>
       </div>
-
-      <div class="form-step">
-        <h2 class="form-step__title"><i>2</i> Ma pointure</h2>
-        <div class="sizes-grid" id="sizes"></div>
-        <p class="hint small muted" style="margin-top:-4px">Une pointure par paire : vous pouvez commander pour toute la famille. La semelle se découpe ensuite à la taille exacte.</p>
-        <div class="field" id="field-color">
-          <label for="color">Coloris <span class="req">*</span></label>
-          <select class="select" id="color" name="color"><option value="">Choisir…</option></select>
-          <div class="field__error">Choisissez un coloris</div>
-        </div>
+      <div class="field__error">10 chiffres (ex : 07 00 00 00 00)</div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="city">Ville / Quartier</label>
+        <input class="input" id="city" name="city" type="text" list="cities" autocomplete="address-level2" placeholder="Ex : Yopougon" required>
+        <datalist id="cities">{datalist}</datalist>
+        <div class="field__error">Ville ou quartier</div>
       </div>
-
-      <div class="form-step">
-        <h2 class="form-step__title"><i>3</i> Mes informations de livraison</h2>
-        <div class="field">
-          <label for="name">Nom complet <span class="req">*</span></label>
-          <input class="input" id="name" name="name" type="text" autocomplete="name" placeholder="Ex : Aminata Koné" required>
-          <div class="field__error">Indiquez votre nom complet</div>
-        </div>
-        <div class="field">
-          <label for="phone">Téléphone / WhatsApp <span class="req">*</span></label>
-          <div class="phone-wrap">
-            <span class="phone-wrap__prefix">+225</span>
-            <input class="input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="07 00 00 00 00" required>
-          </div>
-          <div class="field__error">Numéro à 10 chiffres (ex : 07 00 00 00 00)</div>
-          <div class="hint">Le livreur vous appellera sur ce numéro.</div>
-        </div>
-        <div class="field">
-          <label for="city">Ville / Quartier <span class="req">*</span></label>
-          <input class="input" id="city" name="city" type="text" list="cities" autocomplete="address-level2" placeholder="Ex : Abidjan - Yopougon Niangon" required>
-          <datalist id="cities">{datalist}</datalist>
-          <div class="field__error">Indiquez votre ville ou quartier</div>
-        </div>
-        <div class="field">
-          <label for="address">Adresse précise / point de repère <span class="req">*</span></label>
-          <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : derrière la pharmacie, près du carrefour…" required>
-          <div class="field__error">Donnez un point de repère pour le livreur</div>
-        </div>
-        <div class="field">
-          <label for="notes">Remarques <span class="muted small">(optionnel)</span></label>
-          <textarea class="textarea" id="notes" name="notes" placeholder="Ex : livrer après 17h, appeler avant de passer…"></textarea>
-        </div>
+      <div class="field">
+        <label for="address">Point de repère</label>
+        <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : près de la pharmacie" required>
+        <div class="field__error">Un repère pour le livreur</div>
       </div>
-
-      <button class="btn btn--primary btn--block" type="submit">Valider ma commande · <span id="submit-total"></span></button>
-      <p class="center small muted" style="margin-top:10px">💵 Vous payez seulement à la livraison · 🚚 Livraison gratuite</p>
-    </form>
-
-    <aside class="card summary" aria-label="Résumé de la commande">
-      <h2>Ma commande</h2>
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
-        <img src="assets/img/bohflex-hero-600.webp" alt="" width="72" height="72" style="object-fit:cover;border-radius:12px">
-        <div><strong>Semelles Confort BOHFLEX</strong><div class="muted small" id="sum-offer"></div></div>
-      </div>
-      <div class="summary__row"><span>Prix normal</span><s class="muted" id="sum-old"></s></div>
-      <div class="summary__row"><span>Prix de l'offre</span><strong id="sum-price"></strong></div>
-      <div class="summary__row"><span>Livraison</span><span class="free">Gratuite</span></div>
-      <div class="summary__total"><span>À payer à la livraison</span><b id="sum-total"></b></div>
-      <ul class="trust-row">
-        <li>{ic("cash")} Paiement en espèces au livreur</li>
-        <li>{ic("phone")} Appel de confirmation avant livraison</li>
-        <li>{ic("pin")} Toute la Côte d'Ivoire</li>
-      </ul>
-    </aside>
-  </div>
+    </div>
+    <div class="field">
+      <label>Pointure de chaque paire</label>
+      <div class="sizes-row" id="sizes"></div>
+    </div>
+    <button class="btn btn--primary btn--block btn--xl" type="submit">Commander · <span id="submit-total"></span></button>
+    <p class="order-note">{ic("cash")} Paiement à la livraison · {ic("truck")} Livraison gratuite</p>
+  </form>
 </div>
 
 <div class="container" id="order-success" hidden>
@@ -589,12 +697,16 @@ order_body = f"""
   <div class="modal__backdrop" data-close></div>
   <div class="modal__panel">
     <button class="modal__close" type="button" data-close aria-label="Fermer">×</button>
-    <h2 id="recap-title">Vérifiez votre commande</h2>
+    <h2 id="recap-title">Confirmez votre commande</h2>
     <div class="recap"><dl id="recap-list"></dl></div>
-    <p class="small muted">Vérifiez vos informations : notre équipe vous appellera à ce numéro pour confirmer la livraison.</p>
+    <div class="recap-total"><span>À payer à la livraison</span><b id="recap-total"></b></div>
+    <ul class="recap-info">
+      <li>{ic("phone")} Un conseiller vous appelle pour confirmer la livraison.</li>
+      <li>{ic("cash")} Vous payez en espèces, à la réception du colis.</li>
+    </ul>
     <p class="notice notice--error" id="order-error" hidden>L'envoi n'a pas abouti (connexion internet ?). Réessayez, ou envoyez votre commande sur WhatsApp : <a id="order-wa" href="#" target="_blank" rel="noopener">envoyer sur WhatsApp</a>.</p>
     <div class="modal__actions">
-      <button class="btn btn--primary btn--block" type="button" id="order-confirm">{ic("check")} Confirmer ma commande</button>
+      <button class="btn btn--primary btn--block btn--xl" type="button" id="order-confirm">{ic("check")} Je confirme</button>
       <button class="btn btn--outline btn--block" type="button" data-close>Modifier</button>
     </div>
   </div>
