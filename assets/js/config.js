@@ -36,8 +36,8 @@ window.BOHFLEX_CONFIG = {
   // Pointures (la semelle se découpe suivant la pointure exacte)
   sizes: ["35/36", "37/38", "39/40", "41/42", "43/44", "45/46"],
 
-  // Coloris : si un seul coloris, le champ est masqué dans le formulaire
-  colors: ["Orange / Noir"],
+  // Coloris proposés pour chaque paire (le premier est sélectionné par défaut)
+  colors: ["Orange", "Noir", "Gris"],
 
   // Compteur de preuve sociale [À REMPLACER par un chiffre réel]
   deliveredCount: "1 000",

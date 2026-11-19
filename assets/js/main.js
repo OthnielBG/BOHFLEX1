@@ -152,27 +152,37 @@
     var change = $("#change-offer");
     if (change) change.href = "produit.html" + (back.toString() ? "?" + back : "") + "#offre";
 
-    // Une pointure par paire (pratique pour commander pour la famille)
+    // Une ligne par paire : pointure + coloris (pratique pour commander pour la famille)
+    function opts(list, first) {
+      return (first ? '<option value="">' + first + "</option>" : "") +
+        list.map(function (v) { return '<option value="' + v + '">' + v + "</option>"; }).join("");
+    }
     function renderSizes() {
       sizesBox.innerHTML = "";
-      sizesBox.style.gridTemplateColumns = "repeat(" + offer.pairs + ", minmax(0, 1fr))";
       for (var i = 0; i < offer.pairs; i++) {
-        var wrap = document.createElement("div");
-        wrap.className = "field";
-        wrap.innerHTML =
-          '<select class="select" name="pointure" required aria-label="Pointure de la paire ' + (i + 1) + '">' +
-          '<option value="">Paire ' + (i + 1) + '</option>' +
-          (CFG.sizes || []).map(function (s) { return '<option value="' + s + '">' + s + "</option>"; }).join("") +
-          "</select>";
-        sizesBox.appendChild(wrap);
+        var row = document.createElement("div");
+        row.className = "pair";
+        row.innerHTML =
+          '<span class="pair__n">Paire ' + (i + 1) + "</span>" +
+          '<div class="field"><select class="select" name="pointure" required aria-label="Pointure de la paire ' + (i + 1) + '">' +
+          opts(CFG.sizes || [], "Pointure") + "</select></div>" +
+          '<div class="field"><select class="select" name="coloris" aria-label="Coloris de la paire ' + (i + 1) + '">' +
+          opts(colors) + "</select></div>";
+        sizesBox.appendChild(row);
       }
-      // Remplir la paire suivante avec la même pointure, modifiable
-      $$("select", sizesBox).forEach(function (sel, idx, all) {
+      // La paire suivante reprend la même pointure (modifiable)
+      $$("select[name=pointure]", sizesBox).forEach(function (sel, idx, all) {
         sel.addEventListener("change", function () {
           all.forEach(function (o, k) { if (k > idx && !o.value) o.value = sel.value; });
         });
       });
     }
+
+    // Commune : liste déroulante ; « Autre ville… » affiche un champ libre
+    var commune = form.elements.commune, other = $("#field-other");
+    function syncOther() { other.hidden = commune.value !== "autre"; }
+    commune.addEventListener("change", syncOther);
+    function cityValue() { return commune.value === "autre" ? form.elements.city_other.value.trim() : commune.value; }
 
     setText("sum-offer", offer.label);
     setText("sum-price", fcfa(offer.price));
@@ -190,9 +200,14 @@
     // Pré-remplissage si le client a déjà commandé sur cet appareil
     var known = store(STORAGE_KEY);
     if (known) {
-      ["name", "phone", "city", "address"].forEach(function (k) {
+      ["name", "phone", "address"].forEach(function (k) {
         if (known[k] && form.elements[k]) form.elements[k].value = known[k];
       });
+      if (known.city) {
+        commune.value = known.city;
+        if (commune.value !== known.city) { commune.value = "autre"; form.elements.city_other.value = known.city; }
+        syncOther();
+      }
       var hello = $("#welcome-back");
       if (hello && known.name) {
         hello.hidden = false;
@@ -221,7 +236,8 @@
       $$("select[name=pointure]", form).forEach(function (s) { check(s, !s.value); });
       check(form.elements.name, form.elements.name.value.trim().length < 3);
       check(form.elements.phone, normalizePhone(form.elements.phone.value).length !== 10);
-      check(form.elements.city, form.elements.city.value.trim().length < 2);
+      check(commune, !commune.value);
+      if (commune.value === "autre") check(form.elements.city_other, form.elements.city_other.value.trim().length < 2);
       check(form.elements.address, form.elements.address.value.trim().length < 4);
       if (firstBad) {
         firstBad.focus();
@@ -247,15 +263,19 @@
         pairs: offer.pairs,
         price: offer.price,
         sizes: $$("select[name=pointure]", form).map(function (s) { return s.value; }),
-        color: colors[0] || "",
+        colors: $$("select[name=coloris]", form).map(function (s) { return s.value; }),
         name: form.elements.name.value.trim(),
         phone: phone.replace(/(\d{2})(?=\d)/g, "$1 "),
-        city: form.elements.city.value.trim(),
+        city: cityValue(),
         address: form.elements.address.value.trim(),
         notes: "",
         source: document.referrer || "direct",
         utm: window.location.search.replace(/^\?/, "")
       };
+    }
+
+    function pairsText(o) {
+      return o.sizes.map(function (sz, k) { return sz + " " + (o.colors[k] || ""); }).join(", ");
     }
 
     function waMessage(o) {
@@ -265,7 +285,7 @@
         "🛒 Offre : " + o.offer + " — " + fcfa(o.price),
         "👟 Pointure(s) : " + o.sizes.join(", ")
       ];
-      if (o.color && colors.length > 1) lines.push("🎨 Coloris : " + o.color);
+      lines.push("🎨 Coloris : " + o.colors.join(", "));
       lines.push(
         "",
         "👤 Nom : " + o.name,
@@ -282,7 +302,7 @@
       var dl = $("#recap-list");
       var rows = [
         ["Produit", "Semelles BOHFLEX · " + o.offer],
-        ["Pointures", o.sizes.join(", ")],
+        ["Paires", pairsText(o)],
         ["Nom", o.name],
         ["Téléphone", "+225 " + o.phone],
         ["Livraison", o.city + " · " + o.address + " (gratuite)"]
@@ -310,7 +330,8 @@
     // Envoie la commande à l'application de gestion (Supabase). Renvoie une promesse : true si enregistrée.
     function sendToApp(o) {
       if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) return Promise.resolve(false);
-      var p = Object.assign({}, o, { sizes: o.sizes.join(", "), univers: CFG.univers || "bienetre" });
+      var p = Object.assign({}, o, { sizes: o.sizes.join(", "), color: pairsText(o), univers: CFG.univers || "bienetre" });
+      delete p.colors;
       var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(false); }, 20000); });
       var send = fetch(CFG.supabaseUrl.trim().replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/+$/, "") + "/rest/v1/rpc/site_order", {
         method: "POST",
@@ -322,7 +343,7 @@
 
     function sendToWebhook(o) {
       if (!CFG.orderWebhookUrl) return;
-      var payload = JSON.stringify(Object.assign({}, o, { sizes: o.sizes.join(", ") }));
+      var payload = JSON.stringify(Object.assign({}, o, { sizes: o.sizes.join(", "), colors: o.colors.join(", ") }));
       try {
         // text/plain évite le "preflight" CORS (compatible Google Apps Script)
         fetch(CFG.orderWebhookUrl, {

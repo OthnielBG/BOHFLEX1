@@ -745,3 +745,30 @@ body.page-order .topbar, body.page-order .footer { display: none; }
   .product__info .offer-opt__box { padding-top: 10px; padding-bottom: 10px; }
 }
 .review__title { display: block; margin-bottom: 4px; }
+
+/* ---------- Retours du 19/11 ---------- */
+.btn--xl { text-align: center; justify-content: center; }
+@media (max-width: 899px) {
+  /* Galerie : photo carrée pleine largeur, sans arrondi */
+  .gallery { margin: 0 -18px; }
+  .gallery__main { aspect-ratio: 1 / 1; border-radius: 0; background: none; display: block; }
+  .gallery__main img { width: 100%; height: auto; min-height: 0; aspect-ratio: 1; object-fit: cover; border-radius: 0; }
+  .gallery__thumbs { padding: 0 18px; }
+  .gallery__thumbs button { flex-basis: calc((100% - 24px) / 4); border-radius: 4px; }
+  .gallery__thumbs img { border-radius: 0; }
+}
+.gallery__thumbs button, .gallery__thumbs img { border-radius: 4px; }
+@media (min-width: 900px) { .gallery__main, .gallery__main img { border-radius: 6px; } }
+.swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: .9rem; color: var(--grey); margin: 0 0 12px; }
+.swatches span { display: inline-flex; align-items: center; gap: 5px; color: var(--black); font-weight: 600; }
+.swatches i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .15); }
+/* Formulaire : une ligne par paire */
+.pairs { display: grid; gap: 8px; }
+.pair { display: grid; grid-template-columns: 62px 1fr 1fr; gap: 8px; align-items: center; }
+.pair .field { margin: 0; }
+.pair__n { font-weight: 700; font-size: .9rem; }
+.order-one .select { padding-left: 12px; padding-right: 28px; background-position: right 8px center; }
+#field-other { margin-top: -2px; }
+/* Signes en photo */
+.sign--photo { padding: 0 0 12px; overflow: hidden; }
+.sign--photo img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; margin-bottom: 8px; }

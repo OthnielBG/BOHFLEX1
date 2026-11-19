@@ -3,7 +3,7 @@
 
 Usage (depuis la racine du projet) : python3 tools/build_pages.py .
 """
-import sys, pathlib, csv, html
+import sys, pathlib, csv, html, re
 
 OUT = pathlib.Path(sys.argv[1])
 
@@ -334,7 +334,16 @@ SIGNS = [
     ("shoe", "Chaussures inconfortables", "de travail ou de sécurité"),
     ("battery", "Jambes lourdes", "et fatigue le soir"),
 ]
-signs_html = "".join(f'<li class="sign"><span class="sign__ico">{ic(i)}</span><b>{t}</b><span>{d}</span></li>' for i, t, d in SIGNS)
+import unicodedata
+def _slug(t):
+    t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")
+def _sign(i, t, d):
+    name = "signe-" + _slug(t)
+    if (OUT / f"assets/img/{name}-600.webp").exists():
+        return f'<li class="sign sign--photo">{pic(name, t + " " + d)}<b>{t}</b><span>{d}</span></li>'
+    return f'<li class="sign"><span class="sign__ico">{ic(i)}</span><b>{t}</b><span>{d}</span></li>'
+signs_html = "".join(_sign(i, t, d) for i, t, d in SIGNS)
 
 FEATURES = [
     ("dots", "Nodules de massage", "Ils massent la plante du pied à chaque pas."),
@@ -553,6 +562,8 @@ product_body = f"""
           {picker()}
         </fieldset>
       </form>
+      <p class="swatches">Coloris au choix pour chaque paire :
+        <span><i style="background:#E8571A"></i>Orange</span><span><i style="background:#1C1C1C"></i>Noir</span><span><i style="background:#9A9DA1"></i>Gris</span></p>
       <a class="btn btn--primary btn--block btn--xl" href="commander.html?offre=3" data-order-link>Je commande mes semelles</a>
       <p class="pay-note">{ic("truck")} Livraison gratuite · {ic("cash")} Paiement à la réception</p>
       <ul class="check-list">
@@ -657,12 +668,16 @@ page("produit.html", "Semelles Confort BOHFLEX — 2 paires 6 500 FCFA | Livrais
      product_body, extra_head=PRODUCT_LD)
 
 # ============================ COMMANDER ============================
-CITIES = ["Abidjan - Cocody", "Abidjan - Yopougon", "Abidjan - Abobo", "Abidjan - Adjamé", "Abidjan - Plateau",
-          "Abidjan - Marcory", "Abidjan - Koumassi", "Abidjan - Treichville", "Abidjan - Port-Bouët",
-          "Abidjan - Attécoubé", "Abidjan - Riviera", "Abidjan - Angré", "Bingerville", "Anyama", "Songon",
-          "Grand-Bassam", "Bouaké", "Yamoussoukro", "San-Pédro", "Daloa", "Korhogo", "Man", "Gagnoa",
-          "Abengourou", "Divo", "Soubré", "Agboville", "Dabou", "Bondoukou", "Odienné"]
-datalist = "".join(f'<option value="{c}">' for c in CITIES)
+ABIDJAN = ["Abobo", "Adjamé", "Anyama", "Attécoubé", "Bingerville", "Cocody", "Koumassi", "Marcory",
+           "Plateau", "Port-Bouët", "Songon", "Treichville", "Yopougon"]
+TOWNS = sorted(["Aboisso", "Abengourou", "Adzopé", "Agboville", "Bondoukou", "Bouaflé", "Bouaké", "Dabou", "Daloa",
+                "Divo", "Ferkessédougou", "Gagnoa", "Grand-Bassam", "Issia", "Jacqueville", "Korhogo", "Man",
+                "Odienné", "San-Pédro", "Sassandra", "Séguéla", "Soubré", "Tiassalé", "Toumodi", "Yamoussoukro"])
+city_options = ('<option value="">Choisir…</option><optgroup label="Abidjan">'
+                + "".join(f'<option value="Abidjan - {c}">{c}</option>' for c in ABIDJAN)
+                + '</optgroup><optgroup label="Intérieur du pays">'
+                + "".join(f'<option value="{c}">{c}</option>' for c in TOWNS)
+                + '</optgroup><option value="autre">Autre ville…</option>')
 
 order_body = f"""
 <div class="container order-one" id="order-view">
@@ -688,20 +703,23 @@ order_body = f"""
     </div>
     <div class="field-row">
       <div class="field">
-        <label for="city">Ville / Quartier</label>
-        <input class="input" id="city" name="city" type="text" list="cities" autocomplete="address-level2" placeholder="Ex : Yopougon" required>
-        <datalist id="cities">{datalist}</datalist>
-        <div class="field__error">Ville ou quartier</div>
+        <label for="commune">Commune / Ville</label>
+        <select class="select" id="commune" name="commune" required>{city_options}</select>
+        <div class="field__error">Choisissez</div>
       </div>
       <div class="field">
-        <label for="address">Point de repère</label>
-        <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : près de la pharmacie" required>
-        <div class="field__error">Un repère pour le livreur</div>
+        <label for="address">Quartier, repère</label>
+        <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : Angré, pharmacie" required>
+        <div class="field__error">Pour le livreur</div>
       </div>
     </div>
+    <div class="field" id="field-other" hidden>
+      <input class="input" id="city-other" name="city_other" type="text" autocomplete="address-level2" placeholder="Nom de votre ville">
+      <div class="field__error">Indiquez votre ville</div>
+    </div>
     <div class="field">
-      <label>Pointure de chaque paire</label>
-      <div class="sizes-row" id="sizes"></div>
+      <label>Pointure et coloris de chaque paire</label>
+      <div class="pairs" id="sizes"></div>
     </div>
     <button class="btn btn--primary btn--block btn--xl" type="submit">Commander · <span id="submit-total"></span></button>
     <p class="order-note">{ic("cash")} Paiement à la livraison · {ic("truck")} Livraison gratuite</p>

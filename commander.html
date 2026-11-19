@@ -63,20 +63,23 @@
     </div>
     <div class="field-row">
       <div class="field">
-        <label for="city">Ville / Quartier</label>
-        <input class="input" id="city" name="city" type="text" list="cities" autocomplete="address-level2" placeholder="Ex : Yopougon" required>
-        <datalist id="cities"><option value="Abidjan - Cocody"><option value="Abidjan - Yopougon"><option value="Abidjan - Abobo"><option value="Abidjan - Adjamé"><option value="Abidjan - Plateau"><option value="Abidjan - Marcory"><option value="Abidjan - Koumassi"><option value="Abidjan - Treichville"><option value="Abidjan - Port-Bouët"><option value="Abidjan - Attécoubé"><option value="Abidjan - Riviera"><option value="Abidjan - Angré"><option value="Bingerville"><option value="Anyama"><option value="Songon"><option value="Grand-Bassam"><option value="Bouaké"><option value="Yamoussoukro"><option value="San-Pédro"><option value="Daloa"><option value="Korhogo"><option value="Man"><option value="Gagnoa"><option value="Abengourou"><option value="Divo"><option value="Soubré"><option value="Agboville"><option value="Dabou"><option value="Bondoukou"><option value="Odienné"></datalist>
-        <div class="field__error">Ville ou quartier</div>
+        <label for="commune">Commune / Ville</label>
+        <select class="select" id="commune" name="commune" required><option value="">Choisir…</option><optgroup label="Abidjan"><option value="Abidjan - Abobo">Abobo</option><option value="Abidjan - Adjamé">Adjamé</option><option value="Abidjan - Anyama">Anyama</option><option value="Abidjan - Attécoubé">Attécoubé</option><option value="Abidjan - Bingerville">Bingerville</option><option value="Abidjan - Cocody">Cocody</option><option value="Abidjan - Koumassi">Koumassi</option><option value="Abidjan - Marcory">Marcory</option><option value="Abidjan - Plateau">Plateau</option><option value="Abidjan - Port-Bouët">Port-Bouët</option><option value="Abidjan - Songon">Songon</option><option value="Abidjan - Treichville">Treichville</option><option value="Abidjan - Yopougon">Yopougon</option></optgroup><optgroup label="Intérieur du pays"><option value="Abengourou">Abengourou</option><option value="Aboisso">Aboisso</option><option value="Adzopé">Adzopé</option><option value="Agboville">Agboville</option><option value="Bondoukou">Bondoukou</option><option value="Bouaflé">Bouaflé</option><option value="Bouaké">Bouaké</option><option value="Dabou">Dabou</option><option value="Daloa">Daloa</option><option value="Divo">Divo</option><option value="Ferkessédougou">Ferkessédougou</option><option value="Gagnoa">Gagnoa</option><option value="Grand-Bassam">Grand-Bassam</option><option value="Issia">Issia</option><option value="Jacqueville">Jacqueville</option><option value="Korhogo">Korhogo</option><option value="Man">Man</option><option value="Odienné">Odienné</option><option value="San-Pédro">San-Pédro</option><option value="Sassandra">Sassandra</option><option value="Soubré">Soubré</option><option value="Séguéla">Séguéla</option><option value="Tiassalé">Tiassalé</option><option value="Toumodi">Toumodi</option><option value="Yamoussoukro">Yamoussoukro</option></optgroup><option value="autre">Autre ville…</option></select>
+        <div class="field__error">Choisissez</div>
       </div>
       <div class="field">
-        <label for="address">Point de repère</label>
-        <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : près de la pharmacie" required>
-        <div class="field__error">Un repère pour le livreur</div>
+        <label for="address">Quartier, repère</label>
+        <input class="input" id="address" name="address" type="text" autocomplete="street-address" placeholder="Ex : Angré, pharmacie" required>
+        <div class="field__error">Pour le livreur</div>
       </div>
     </div>
+    <div class="field" id="field-other" hidden>
+      <input class="input" id="city-other" name="city_other" type="text" autocomplete="address-level2" placeholder="Nom de votre ville">
+      <div class="field__error">Indiquez votre ville</div>
+    </div>
     <div class="field">
-      <label>Pointure de chaque paire</label>
-      <div class="sizes-row" id="sizes"></div>
+      <label>Pointure et coloris de chaque paire</label>
+      <div class="pairs" id="sizes"></div>
     </div>
     <button class="btn btn--primary btn--block btn--xl" type="submit">Commander · <span id="submit-total"></span></button>
     <p class="order-note"><svg class="icon" aria-hidden="true"><use href="#i-cash"/></svg> Paiement à la livraison · <svg class="icon" aria-hidden="true"><use href="#i-truck"/></svg> Livraison gratuite</p>
