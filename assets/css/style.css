@@ -726,3 +726,21 @@ body.page-order .topbar, body.page-order .footer { display: none; }
 .recap-info li { display: flex; gap: 8px; align-items: center; }
 .recap-info .icon { width: 20px; height: 20px; color: var(--orange); flex: none; }
 .modal__panel { max-height: 92svh; overflow-y: auto; }
+
+/* ---------- Haut de fiche produit : accroche + prix + bouton visibles d'emblée ---------- */
+.product__info h1.product__hook { font-size: clamp(1.55rem, 6.2vw, 2.4rem); line-height: 1.08; margin-bottom: 6px; }
+.product__name { color: var(--grey); font-size: .92rem; margin: 0 0 12px; }
+.product__info .offer-picker { margin-bottom: 12px; }
+.product__info .check-list { margin: 16px 0 0; }
+.pay-note .icon { color: var(--orange); }
+@media (max-width: 899px) {
+  .product { gap: 16px; padding-top: 8px; }
+  .breadcrumb { display: none; }
+}
+@media (max-width: 899px) {
+  .gallery__main { display: flex; justify-content: center; aspect-ratio: auto; background: var(--orange-light); border-radius: 16px; overflow: hidden; }
+  .gallery__main img { height: 40svh; min-height: 250px; width: auto; max-width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0; }
+  .gallery__thumbs button { flex-basis: calc((100% - 48px) / 7); }
+  .product__info h1.product__hook { font-size: 1.42rem; }
+  .product__info .offer-opt__box { padding-top: 10px; padding-bottom: 10px; }
+}

@@ -72,9 +72,6 @@ FOOTER = f"""<footer class="footer">
         <a class="logo" href="index.html"><img class="logo__mark" src="assets/img/logo-mark.svg" alt="" width="34" height="34"><span>BOHFLEX<b>.</b></span></a>
         <p>Semelles massantes de confort pour celles et ceux qui restent debout toute la journée. Livraison gratuite partout en Côte d'Ivoire, paiement à la livraison.</p>
         <div class="socials">
-          <a href="#" aria-label="Facebook">{ic("facebook")}</a>
-          <a href="#" aria-label="Instagram">{ic("instagram")}</a>
-          <a href="#" aria-label="TikTok">{ic("tiktok")}</a>
           <a href="#" data-wa aria-label="WhatsApp">{ic("whatsapp")}</a>
         </div>
       </div>
@@ -125,9 +122,39 @@ def sticky(price_offer="3"):
 </div>
 """
 
+# Liens des réseaux sociaux : à remplir quand les comptes existent (sinon l'icône n'est pas affichée)
+SOCIALS = {"facebook": "", "instagram": "", "tiktok": ""}
+def social_links(style=""):
+    return "".join(f'<a href="{u}" target="_blank" rel="noopener" aria-label="{k.capitalize()}"{style}>{ic(k)}</a>'
+                   for k, u in SOCIALS.items() if u)
+
 SCRIPTS = """<script src="assets/js/config.js"></script>
 <script src="assets/js/main.js"></script>
 """
+
+import re, datetime, urllib.parse
+_CFG = (OUT / "assets/js/config.js").read_text(encoding="utf-8")
+def _cfg(key):
+    return re.search(key + r'\s*:\s*"?([^",\n]*)"?', _CFG).group(1).strip()
+WA_NUMBER, PHONE, UNIT = _cfg("whatsappNumber"), _cfg("phoneDisplay"), int(_cfg("unitPrice"))
+OFFER_DATA = {m[0]: (int(m[1]), int(m[2])) for m in re.findall(r'id:\s*"(\d+)",\s*pairs:\s*(\d+),\s*price:\s*(\d+)', _CFG)}
+def _fcfa(n):
+    return f"{round(n):,}".replace(",", " ") + " FCFA"
+WA_DEFAULT = "https://wa.me/" + WA_NUMBER + "?text=" + urllib.parse.quote("Bonjour BOHFLEX, j'aimerais avoir des informations sur les semelles.")
+
+def prerender(html):
+    def fill(attr, fn):
+        nonlocal html
+        html = re.sub(r'(<[a-z]+[^>]*\b' + attr + r'="(\d)"[^>]*>)(</)', lambda m: m.group(1) + fn(*OFFER_DATA[m.group(2)]) + m.group(3), html)
+    fill("data-price", lambda pairs, price: _fcfa(price))
+    fill("data-old", lambda pairs, price: _fcfa(UNIT * pairs))
+    fill("data-unit", lambda pairs, price: "soit " + _fcfa(price / pairs) + " la paire")
+    fill("data-save", lambda pairs, price: "Vous économisez " + _fcfa(UNIT * pairs - price))
+    html = re.sub(r'(<span data-year>)(</span>)', r'\g<1>' + str(datetime.date.today().year) + r'\g<2>', html)
+    html = html.replace('href="#" data-wa', f'href="{WA_DEFAULT}" target="_blank" rel="noopener" data-wa')
+    html = re.sub(r'<a ([^>]*)href="#" data-phone>(</a>)', lambda m: f'<a {m.group(1)}href="tel:+{WA_NUMBER}" data-phone>{PHONE}{m.group(2)}', html)
+    html = html.replace('<a href="#" data-phone></a>', f'<a href="tel:+{WA_NUMBER}" data-phone>{PHONE}</a>')
+    return html
 
 def page(fname, title, desc, body, active=None, body_class="", extra_head=""):
     html = head(title, desc, extra_head)
@@ -135,7 +162,7 @@ def page(fname, title, desc, body, active=None, body_class="", extra_head=""):
     html += header(active or fname)
     html += f"<main>\n{body}\n</main>\n"
     html += FOOTER + sticky() + SCRIPTS + "</body>\n</html>\n"
-    (OUT / fname).write_text(html, encoding="utf-8")
+    (OUT / fname).write_text(prerender(html), encoding="utf-8")
 
 TRUST = f"""<ul class="trust-row">
   <li>{ic("truck")} Livraison gratuite</li>
@@ -251,7 +278,7 @@ def reviews_summary():
 </div>"""
 
 def reviews_section(n=6):
-    if not REVIEWS_DATA:
+    if not REVIEWS_DATA or REVIEWS_EXAMPLE:
         return ""
     note = ('<p class="notice center">Aperçu de mise en page : <strong>avis d\'exemple</strong>, '
             'bientôt remplacés par les vrais avis de nos clients.</p>') if REVIEWS_EXAMPLE else ""
@@ -514,25 +541,21 @@ product_body = f"""
       </div>
     </div>
     <div class="product__info" id="offre">
-      <h1>Semelles Confort BOHFLEX</h1>
-      <div class="product__tagline">Le confort toute la journée</div>
-      <p>Les semelles massantes BOHFLEX se glissent dans toutes vos chaussures (de travail, de sécurité, baskets ou chaussures de ville) et se découpent à votre pointure.</p>
-      <ul class="check-list">
-        <li>{ic("dots")}<span>Nodules de massage sous la plante du pied</span></li>
-        <li>{ic("arch")}<span>Soutien de la voûte plantaire</span></li>
-        <li>{ic("wave")}<span>Amorti moelleux qui absorbe les chocs</span></li>
-        <li>{ic("wind")}<span>Aération respirante et talon renforcé</span></li>
-        <li>{ic("scissors")}<span>Se découpe suivant votre pointure (35 → 46)</span></li>
-      </ul>
+      <h1 class="product__hook">Vos pieds vous portent toute la journée. Offrez-leur du confort.</h1>
+      <p class="product__name">Semelles Confort BOHFLEX · massantes, découpables du 35 au 46</p>
       <form id="product-picker" onsubmit="return false">
         <fieldset class="offer-picker">
-          <legend>Choisissez votre offre :</legend>
+          <legend class="sr-only">Choisissez votre offre</legend>
           {picker()}
         </fieldset>
       </form>
-      <a class="btn btn--primary btn--block btn--xl" href="commander.html?offre=3" data-order-link>Commander maintenant</a>
-      <p class="pay-note">{ic("cash")} Vous payez <b>uniquement à la livraison</b></p>
-      <div style="margin-top:10px">{TRUST}</div>
+      <a class="btn btn--primary btn--block btn--xl" href="commander.html?offre=3" data-order-link>Je commande mes semelles</a>
+      <p class="pay-note">{ic("truck")} Livraison gratuite · {ic("cash")} Paiement à la réception</p>
+      <ul class="check-list">
+        <li>{ic("dots")}<span>Nodules de massage sous la plante du pied</span></li>
+        <li>{ic("wave")}<span>Amorti moelleux et soutien de la voûte</span></li>
+        <li>{ic("shoe")}<span>Chaussures de travail, de sécurité, baskets, ville</span></li>
+      </ul>
     </div>
   </section>
 </div>
@@ -811,9 +834,9 @@ contact_body = f"""
   <div class="grid grid--3 contact-cards">
     <div class="card">{ic("whatsapp")}<h3>WhatsApp</h3><p class="muted">Le moyen le plus rapide pour commander ou poser une question.</p><a class="btn btn--wa" href="#" data-wa>Écrire sur WhatsApp</a></div>
     <div class="card">{ic("phone")}<h3>Téléphone</h3><p class="muted">Appelez-nous de 8h à 20h.</p><a class="btn btn--dark" href="#" data-phone></a></div>
-    <div class="card">{ic("heart")}<h3>Réseaux sociaux</h3><p class="muted">Suivez-nous pour les nouveautés et les promos.</p>
-      <div class="socials" style="margin-top:0"><a href="#" aria-label="Facebook" style="background:var(--orange);color:#fff">{ic("facebook")}</a><a href="#" aria-label="Instagram" style="background:var(--orange);color:#fff">{ic("instagram")}</a><a href="#" aria-label="TikTok" style="background:var(--orange);color:#fff">{ic("tiktok")}</a></div>
-    </div>
+{f"""<div class="card">{ic("heart")}<h3>Réseaux sociaux</h3><p class="muted">Suivez-nous pour les nouveautés et les promos.</p>
+      <div class="socials" style="margin-top:0">{social_links(' style="background:var(--orange);color:#fff"')}</div>
+    </div>""" if any(SOCIALS.values()) else ""}
   </div>
 </div></section>
 """
