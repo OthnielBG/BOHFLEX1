@@ -1,5 +1,5 @@
 /* BOHFLEX — Service worker : rend le site installable et utilisable hors connexion (pages déjà visitées). */
-var CACHE = "bohflex-v3";
+var CACHE = "bohflex-v4";
 var CORE = [
   "./", "index.html", "produit.html", "commander.html", "faq.html", "contact.html",
   "a-propos.html", "suivi.html", "mentions-legales.html",
