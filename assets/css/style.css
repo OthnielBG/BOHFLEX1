@@ -744,3 +744,4 @@ body.page-order .topbar, body.page-order .footer { display: none; }
   .product__info h1.product__hook { font-size: 1.42rem; }
   .product__info .offer-opt__box { padding-top: 10px; padding-bottom: 10px; }
 }
+.review__title { display: block; margin-bottom: 4px; }

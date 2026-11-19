@@ -24,7 +24,7 @@ window.BOHFLEX_CONFIG = {
   metaPixelId: "1779196666667619",
 
   // Prix unitaire de référence (sert au prix barré / ancrage)
-  unitPrice: 4500, // [À VALIDER]
+  unitPrice: 4500,
 
   // Offres disponibles
   offers: [

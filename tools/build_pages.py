@@ -243,7 +243,9 @@ def load_reviews():
             date = g("date", "review_date", "created_at")[:10]
             if len(date) == 10 and date[4] == "-":
                 date = f"{date[8:10]}/{date[5:7]}/{date[:4]}"
-            out.append((name, g("ville", "location", "city"), rating, text, date))
+            size = g("pointure", "size")
+            place = g("ville", "location", "city") or (f"Pointure {size}" if size else "")
+            out.append((name, place, rating, text, date, g("titre", "title"), g("afficher", "show").lower() in ("oui", "1", "x", "yes")))
     return out
 
 _real = load_reviews()
@@ -255,12 +257,14 @@ def stars(n):
 
 def reviews(n=6):
     cards = ""
-    for name, city, rating, text, date in REVIEWS_DATA[:n]:
+    shown = [r for r in REVIEWS_DATA if len(r) > 6 and r[6]] or REVIEWS_DATA
+    for name, city, rating, text, date, *rest in shown[:n]:
         e = html.escape
+        title = f"<b class=\"review__title\">{e(rest[0])}</b>" if rest and rest[0] else ""
         meta = " · ".join(x for x in (e(city), e(date)) if x)
         cards += f"""<article class="review">
-  <div class="review__top">{stars(rating)}{'' if REVIEWS_EXAMPLE else f'<span class="review__verified">{ic("check")} Achat vérifié</span>'}</div>
-  <p>{e(text)}</p>
+  <div class="review__top">{stars(rating)}</div>
+  {title}<p>{e(text)}</p>
   <div class="review__head"><div class="avatar" aria-hidden="true">{e(name[:1])}</div><div><div class="review__name">{e(name)}</div><div class="review__meta">{meta}</div></div></div>
 </article>"""
     return f'<div class="reviews">{cards}</div>'
@@ -504,7 +508,7 @@ PRODUCT_FAQ = [
     ("Comment choisir ma pointure ?", "Choisissez votre pointure habituelle (de 35/36 à 45/46). La semelle se découpe ensuite aux ciseaux le long du trait de votre pointure exacte."),
     ("Je peux prendre des pointures différentes ?", "Oui : vous choisissez une pointure pour chaque paire. Pratique pour équiper toute la famille."),
     ("Comment se passe le paiement ?", "En espèces, au livreur, quand vous recevez votre colis. Aucun paiement en ligne."),
-    ("En combien de temps je suis livré ?", "Un conseiller vous appelle pour confirmer, puis vous êtes livré en général sous 24 h à Abidjan et 48 à 72 h à l'intérieur du pays."),
+    ("En combien de temps je suis livré ?", "En 24 h. Un conseiller vous appelle d'abord pour confirmer votre commande."),
     ("Dans quelles chaussures les mettre ?", "Chaussures de sécurité, de travail, baskets, chaussures de ville… Retirez la semelle d'origine si possible."),
     ("Est-ce un produit médical ?", "Non, c'est un produit de confort. En cas de douleur persistante, consultez un professionnel de santé."),
 ]
@@ -794,7 +798,7 @@ FAQ = [
     ]),
     ("Livraison", [
         ("La livraison est-elle vraiment gratuite ?", "Oui, la livraison est gratuite partout en Côte d'Ivoire, à Abidjan comme à l'intérieur du pays."),
-        ("Quel est le délai de livraison ?", "En général 24h à Abidjan et 48 à 72h pour l'intérieur du pays, après confirmation de votre commande par téléphone. <em>[Délais à confirmer]</em>"),
+        ("Quel est le délai de livraison ?", "En 24 h, après confirmation de votre commande par téléphone."),
         ("Comment se passe la livraison ?", "Notre équipe vous contacte sur WhatsApp ou par téléphone pour confirmer la commande, puis le livreur vous appelle avant de passer à l'adresse indiquée."),
     ]),
     ("Paiement", [
@@ -829,11 +833,11 @@ page("faq.html", "FAQ — Semelles BOHFLEX : taille, livraison, paiement",
 
 # ============================ CONTACT ============================
 contact_body = f"""
-<section class="page-hero"><div class="container"><h1>Contactez-nous</h1><p>Une question avant de commander ? Notre équipe vous répond rapidement, 7j/7. <em class="small">[Horaires à confirmer]</em></p></div></section>
+<section class="page-hero"><div class="container"><h1>Contactez-nous</h1><p>Une question avant de commander ? Notre équipe vous répond 7j/7, de 6 h à 23 h.</p></div></section>
 <section class="section"><div class="container">
   <div class="grid grid--3 contact-cards">
     <div class="card">{ic("whatsapp")}<h3>WhatsApp</h3><p class="muted">Le moyen le plus rapide pour commander ou poser une question.</p><a class="btn btn--wa" href="#" data-wa>Écrire sur WhatsApp</a></div>
-    <div class="card">{ic("phone")}<h3>Téléphone</h3><p class="muted">Appelez-nous de 8h à 20h.</p><a class="btn btn--dark" href="#" data-phone></a></div>
+    <div class="card">{ic("phone")}<h3>Téléphone</h3><p class="muted">Appelez-nous 7j/7, de 6 h à 23 h.</p><a class="btn btn--dark" href="#" data-phone></a></div>
 {f"""<div class="card">{ic("heart")}<h3>Réseaux sociaux</h3><p class="muted">Suivez-nous pour les nouveautés et les promos.</p>
       <div class="socials" style="margin-top:0">{social_links(' style="background:var(--orange);color:#fff"')}</div>
     </div>""" if any(SOCIALS.values()) else ""}
@@ -869,7 +873,7 @@ legal_body = """
   <h3>4. Paiement</h3>
   <p>Paiement en espèces à la livraison, à la remise du colis. [Moyens de paiement mobile à ajouter ultérieurement.]</p>
   <h3>5. Livraison</h3>
-  <p>Livraison à l'adresse indiquée, partout en Côte d'Ivoire. Délais indicatifs : [24h Abidjan / 48–72h intérieur]. Le livreur contacte le client avant son passage.</p>
+  <p>Livraison à l'adresse indiquée, partout en Côte d'Ivoire. Délai indicatif : 24 h après confirmation de la commande. Le livreur contacte le client avant son passage.</p>
   <h3>6. Satisfait ou remboursé</h3>
   <p>[À définir : délai (ex. 7 jours), état du produit, modalités de retour et de remboursement.]</p>
   <h3>7. Réclamations</h3>
