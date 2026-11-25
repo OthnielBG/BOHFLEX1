@@ -25,6 +25,8 @@ Pour l'avoir sur le téléphone, il faut la mettre en ligne en HTTPS (GitHub Pag
 | Objectifs | Objectifs 2027 par domaine (études, alternance, finances, famille, perso, santé), mesurés par étapes, par compteur ou par le solde d'un compte |
 | Voyages | Dates, transport et logement (réservé ou non), coûts, checklist, budget annuel et montant à mettre de côté chaque mois |
 | Argent | **Mois** : revenus, dépenses, épargne, reste, budgets par catégorie, revenus et charges fixes à cocher. **Épargne** : patrimoine, courbe, matelas de précaution, comptes (livret, PEA, AV, crypto…) avec versements et +/- values. **Budget** : mois type, reste à vivre, règle 50/30/20 |
+| Argent → Maison | **Inventaire** (épicerie, frais, ménage, hygiène) : quantités, seuil de rachat, stock idéal, prix, péremption. **Liste de courses** générée automatiquement, coût estimé, « Noter la dépense » en un clic |
+| Argent → Budget | **✨ Budget proposé par l'IA** (Claude) : à partir des revenus du mois, charges fixes, épargne programmée, historique, voyages prévus et inventaire. Proposé aussi automatiquement après l'ajout d'un revenu. « Appliquer comme budgets » remplit les plafonds par catégorie |
 | Réglages | Prénom, heure du résumé du matin, thème, notifications, export agenda `.ics`, sauvegarde et import JSON |
 
 ## Rappels
@@ -36,3 +38,7 @@ Limite d'une appli web sans serveur : ces rappels partent quand l'appli est ouve
 ## Sauvegarde
 
 Réglages → Exporter (JSON). Il faut faire une sauvegarde régulièrement et avant de changer de téléphone ou de vider les données du navigateur.
+
+## IA (Claude)
+
+La fonction IA utilise la capacité `sample` des artifacts claude.ai : la page interroge Claude **avec le compte Claude de la personne qui l'ouvre**. Il n'y a pas de clé API ni de serveur. Une autorisation est demandée au premier usage. Elle ne fonctionne que si l'appli est ouverte depuis son lien claude.ai. Ailleurs, le bouton affiche « Indisponible ici ». Seules les données nécessaires (revenus, charges, historique, voyages, inventaire) sont envoyées, au moment du clic.

@@ -15,18 +15,26 @@ const AREAS = {
 };
 const EXP = {
   logement: 'Logement', courses: 'Courses / alimentation', transport: 'Transport',
-  voyages: 'Voyages (mon fils)', enfant: 'Enfant', abonnements: 'Abonnements / téléphone',
+  voyages: 'Voyages (mon fils)', enfant: 'Enfant', maison: 'Maison / ménage', abonnements: 'Abonnements / téléphone',
   sante: 'Santé', etudes: 'Études', loisirs: 'Loisirs / sorties', shopping: 'Shopping',
   autre: 'Autre dépense', epargne: 'Épargne & investissement',
 };
 // Répartition 50/30/20 : besoins, envies, épargne
-const NEEDS = ['logement', 'courses', 'transport', 'voyages', 'enfant', 'abonnements', 'sante', 'etudes'];
+const NEEDS = ['logement', 'courses', 'maison', 'transport', 'voyages', 'enfant', 'abonnements', 'sante', 'etudes'];
 const WANTS = ['loisirs', 'shopping', 'autre'];
 const INC = { salaire: 'Salaire (alternance)', aides: 'Aides (APL, prime…)', extra: 'Revenu ponctuel' };
 const ACC = { livret: 'Livret (A, LDDS, LEP…)', pea: 'PEA', av: 'Assurance-vie', cto: 'Compte-titres', crypto: 'Crypto', courant: 'Compte courant', autre: 'Autre' };
 const REPEAT = { none: 'Une fois', daily: 'Tous les jours', weekdays: 'En semaine (lun–ven)', weekly: 'Chaque semaine', monthly: 'Chaque mois' };
 const REMIND = { '-1': 'Pas de rappel', '0': "À l'heure", '15': '15 min avant', '60': '1 h avant', '180': '3 h avant', '1440': 'La veille', '2880': '2 jours avant', '10080': '1 semaine avant' };
 const TRIP_CHECK = ['Confirmer les dates de visite', 'Poser les jours (école / entreprise) si besoin', 'Prévoir les activités avec mon fils', 'Préparer le sac'];
+const INV_CATS = { alim: '🥫 Épicerie', frais: '🥬 Frais', menage: '🧽 Ménage / maison', hygiene: '🧴 Hygiène', autre: '📦 Autre' };
+const ESSENTIALS = [
+  ['Riz', 'alim', 'paquet', 1.5], ['Pâtes', 'alim', 'paquet', 1], ['Huile', 'alim', 'bouteille', 3], ['Farine / semoule', 'alim', 'paquet', 1.2],
+  ['Conserves', 'alim', 'boîte', 1], ['Café / thé', 'alim', 'paquet', 3.5], ['Sucre', 'alim', 'paquet', 1.2], ['Œufs', 'frais', 'boîte de 6', 2],
+  ['Lait', 'frais', 'brique', 1], ['Liquide vaisselle', 'menage', 'flacon', 1.8], ['Lessive', 'menage', 'bidon', 8], ['Éponges', 'menage', 'lot', 2],
+  ['Sacs poubelle', 'menage', 'rouleau', 2.5], ['Papier toilette', 'hygiene', 'paquet', 4], ['Gel douche', 'hygiene', 'flacon', 2.5],
+  ['Dentifrice', 'hygiene', 'tube', 2], ['Déodorant', 'hygiene', 'unité', 3],
+];
 const TITLES = { today: "Aujourd'hui", tasks: 'Tâches & routines', agenda: 'Agenda', goals: 'Objectifs 2027', trips: 'Voyages', money: 'Argent', settings: 'Réglages' };
 
 /* ---------- Utilitaires ---------- */
@@ -58,7 +66,7 @@ const DEF = () => ({
   v: 1, onboarded: false,
   settings: { name: '', morning: 8, notif: false, theme: 'auto' },
   tasks: [], events: [], goals: [], trips: [],
-  tx: [], recurring: [], budgets: {}, accounts: [], worth: {}, notified: {},
+  tx: [], recurring: [], budgets: {}, accounts: [], worth: {}, notified: {}, inv: [], aiLast: null,
 });
 let S = load();
 function load() {
@@ -247,8 +255,8 @@ function avgMonthly() {
   if (!ms.length) return { inc: recIn, spend: recOut, real: false };
   return { inc: ms.reduce((s, x) => s + x.inc, 0) / ms.length, spend: ms.reduce((s, x) => s + x.spend, 0) / ms.length, real: true };
 }
-function editTx(id, type = 'out') {
-  const x = S.tx.find(t => t.id === id) || { type, date: today(), cat: type === 'in' ? 'salaire' : 'courses' };
+function editTx(id, type = 'out', preset = {}) {
+  const x = S.tx.find(t => t.id === id) || { type, date: today(), cat: type === 'in' ? 'salaire' : 'courses', ...preset };
   form({
     title: id ? 'Modifier' : x.type === 'in' ? 'Nouveau revenu' : 'Nouvelle dépense',
     fields: [
@@ -261,6 +269,7 @@ function editTx(id, type = 'out') {
       if (!(v.amount > 0)) { alert('Indique un montant positif.'); return false; }
       if (id) Object.assign(x, v); else S.tx.push({ id: uid(), type: x.type, ...v });
     },
+    after: !id && x.type === 'in' && sampleFn ? askAiAfterIncome : null,
     onDelete: id && (() => { S.tx = S.tx.filter(t => t.id !== id); }),
   });
 }
@@ -341,7 +350,7 @@ function field(x) {
   else input = `<input id="${id}" name="${x.k}" type="${x.type || 'text'}" value="${esc(v)}"${x.req ? ' required' : ''}${x.type === 'number' ? ` step="${x.step || 'any'}" inputmode="decimal"` : ''}${x.ph ? ` placeholder="${esc(x.ph)}"` : ''}>`;
   return `<label class="fld ${cls}" for="${id}"><span>${x.l}</span>${input}${x.hint ? `<small>${x.hint}</small>` : ''}</label>`;
 }
-function form({ title, fields, onSave, onDelete, save: saveL = 'Enregistrer', intro }) {
+function form({ title, fields, onSave, onDelete, save: saveL = 'Enregistrer', intro, after }) {
   const d = $('#dlg');
   d.innerHTML = `<form class="sheet" novalidate><header><h2>${esc(title)}</h2><button type="button" class="icon" data-close aria-label="Fermer">✕</button></header>
     ${intro ? `<p class="mute small">${intro}</p>` : ''}<div class="fields">${fields.map(field).join('')}</div>
@@ -358,6 +367,7 @@ function form({ title, fields, onSave, onDelete, save: saveL = 'Enregistrer', in
     }
     if (onSave(v) === false) return;
     save(); d.close(); render();
+    if (after) setTimeout(after, 80);
   };
   d.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => d.close(); });
   const del = d.querySelector('[data-del]');
@@ -368,13 +378,13 @@ function form({ title, fields, onSave, onDelete, save: saveL = 'Enregistrer', in
 }
 function quickAdd() {
   const d = $('#dlg');
-  const items = [['task', '✅', 'Tâche'], ['event', '📅', 'Événement'], ['out', '🧾', 'Dépense'], ['in', '💰', 'Revenu'], ['trip', '🧳', 'Voyage'], ['goal', '🎯', 'Objectif']];
+  const items = [['task', '✅', 'Tâche'], ['event', '📅', 'Événement'], ['out', '🧾', 'Dépense'], ['in', '💰', 'Revenu'], ['trip', '🧳', 'Voyage'], ['goal', '🎯', 'Objectif'], ['inv', '🏠', 'Article maison'], ['ai', '✨', 'Budget IA']];
   d.innerHTML = `<div class="sheet"><header><h2>Ajouter</h2><button class="icon" data-close aria-label="Fermer">✕</button></header>
     <div class="quick">${items.map(([k, i, l]) => `<button data-q="${k}"><b>${i}</b>${l}</button>`).join('')}</div></div>`;
   d.querySelector('[data-close]').onclick = () => d.close();
   d.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
     d.close();
-    ({ task: () => editTask(null, { date: today() }), event: () => editEvent(null, { date: today() }), out: () => editTx(null, 'out'), in: () => editTx(null, 'in'), trip: () => editTrip(null), goal: () => editGoal(null) })[b.dataset.q]();
+    ({ task: () => editTask(null, { date: today() }), event: () => editEvent(null, { date: today() }), out: () => editTx(null, 'out'), in: () => editTx(null, 'in'), trip: () => editTrip(null), goal: () => editGoal(null), inv: () => editItem(null), ai: aiBudget })[b.dataset.q]();
   });
   d.showModal();
 }
@@ -389,6 +399,9 @@ function alertsList() {
   const st = monthStats(m);
   for (const [k, b] of Object.entries(S.budgets)) if (k !== 'epargne' && (st.by[k] || 0) > b) out.push({ lvl: 'bad', txt: `Budget « ${EXP[k]} » dépassé : ${eur(st.by[k])} / ${eur(b)}`, go: '#money' });
   for (const g of S.goals) { const n = diffDays(t0, g.deadline || '9999-12-31'); if (n >= 0 && n <= 14 && goalProg(g) < 1) out.push({ lvl: 'warn', txt: `Objectif « ${g.title} » : échéance ${inDays(n)}`, go: '#goals' }); }
+  const low = shopping();
+  if (low.length) out.push({ lvl: 'warn', txt: `🏠 ${low.length} article${low.length > 1 ? 's' : ''} à racheter (≈ ${eur(low.reduce((s, i) => s + toBuy(i) * (+i.price || 0), 0))})`, act: 'gostock', id: '' });
+  for (const i of S.inv) { if (!i.exp || !(+i.qty > 0)) continue; const n = diffDays(t0, i.exp); if (n >= 0 && n <= 3) out.push({ lvl: 'warn', txt: `${i.name} périme ${inDays(n)}`, act: 'gostock', id: '' }); }
   if (!S.settings.notif && S.onboarded) out.push({ lvl: 'info', txt: '🔔 Active les notifications pour recevoir tes rappels', go: '#settings' });
   return out;
 }
@@ -573,9 +586,9 @@ function vTrips() {
 }
 
 function vMoney() {
-  const tabs = [['month', 'Mois'], ['save', 'Épargne'], ['plan', 'Budget']];
+  const tabs = [['month', 'Mois'], ['plan', 'Budget'], ['stock', 'Maison'], ['save', 'Épargne']];
   const seg = `<div class="seg">${tabs.map(([k, l]) => `<button class="${UI.mTab === k ? 'on' : ''}" data-a="mt" data-t="${k}">${l}</button>`).join('')}</div>`;
-  return seg + (UI.mTab === 'save' ? vSave() : UI.mTab === 'plan' ? vPlan() : vMonth());
+  return seg + (UI.mTab === 'save' ? vSave() : UI.mTab === 'plan' ? vPlan() : UI.mTab === 'stock' ? vStock() : vMonth());
 }
 function vMonth() {
   const m = UI.mMonth, st = monthStats(m), list = txM(m).sort((a, b) => b.date.localeCompare(a.date));
@@ -623,7 +636,7 @@ function vPlan() {
   const fixedIn = S.recurring.filter(r => r.type === 'in').reduce((s, r) => s + (+r.amount || 0), 0);
   const plannedSave = S.accounts.reduce((s, a) => s + (+a.monthly || 0), 0);
   const rule = (l, v, target, good) => `<div style="margin:0 0 10px"><div class="row"><span class="grow">${l}</span><span class="num small"><b>${eur(v)}</b> · ${inc ? pct(v / inc) : '–'} <span class="mute">(repère ${target})</span></span></div>${bar(inc ? v / inc : 0, good ? 'okc' : '')}</div>`;
-  return `<section class="card"><h2>🧮 Mon mois type</h2>
+  return aiCard() + `<section class="card"><h2>🧮 Mon mois type</h2>
     <div class="kpis"><div class="kpi"><small>Revenus fixes</small><b class="num">${eur(fixedIn)}</b></div><div class="kpi"><small>Charges fixes</small><b class="num">${eur(fixedOut)}</b></div>
     <div class="kpi"><small>Épargne programmée</small><b class="num pos">${eur(plannedSave)}</b></div><div class="kpi"><small>Reste à vivre</small><b class="num ${fixedIn - fixedOut - plannedSave < 0 ? 'neg' : ''}">${eur(fixedIn - fixedOut - plannedSave)}</b></div></div>
     <p class="small mute" style="margin:8px 0 0">Reste à vivre = ce qu’il te reste pour les courses, sorties et imprévus une fois les fixes payés et l’épargne mise de côté.</p></section>
@@ -745,6 +758,151 @@ function download(name, text, type) {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+/* ---------- Inventaire maison ---------- */
+const invStatus = i => i.qty == null || i.qty === '' ? 'unk' : +i.qty <= 0 ? 'out' : +i.qty <= (+i.min || 0) ? 'low' : 'ok';
+const toBuy = i => Math.max(1, Math.ceil((+i.target || (+i.min || 0) + 1) - (+i.qty || 0)));
+const shopping = () => S.inv.filter(i => ['out', 'low'].includes(invStatus(i)));
+function editItem(id) {
+  const i = S.inv.find(x => x.id === id) || { cat: 'alim', min: 1, target: 3, qty: 1 };
+  form({
+    title: id ? "Modifier l'article" : 'Nouvel article maison',
+    fields: [
+      { k: 'name', l: 'Article', req: 1, v: i.name, ph: 'Riz, lessive, dentifrice…' },
+      { k: 'cat', l: 'Rayon', type: 'select', opts: Object.entries(INV_CATS), v: i.cat, half: 1 },
+      { k: 'unit', l: 'Unité', v: i.unit, ph: 'paquet, kg, flacon…', half: 1 },
+      { k: 'qty', l: 'Quantité en stock', type: 'number', v: i.qty, half: 1, step: '0.5' },
+      { k: 'price', l: 'Prix unitaire (€)', type: 'number', v: i.price, half: 1, step: '0.01' },
+      { k: 'min', l: 'Racheter quand ≤', type: 'number', v: i.min, half: 1, step: '0.5' },
+      { k: 'target', l: 'Stock idéal', type: 'number', v: i.target, half: 1, step: '0.5' },
+      { k: 'exp', l: 'Date de péremption (facultatif)', type: 'date', v: i.exp },
+    ],
+    onSave: v => { if (id) Object.assign(i, v); else S.inv.push({ id: uid(), ...v }); },
+    onDelete: id && (() => { S.inv = S.inv.filter(x => x.id !== id); }),
+  });
+}
+function vStock() {
+  const list = shopping(), total = list.reduce((s, i) => s + toBuy(i) * (+i.price || 0), 0), unk = S.inv.filter(i => invStatus(i) === 'unk').length;
+  const pill = i => ({ ok: '<span class="pill ok">OK</span>', low: '<span class="pill warn">Bientôt fini</span>', out: '<span class="pill bad">Épuisé</span>', unk: '<span class="pill warn">À renseigner</span>' })[invStatus(i)];
+  let html = `<section class="card"><h2>🏠 Ma maison<span class="grow"></span><button class="btn sm" data-a="ni">＋ Article</button></h2>
+    <div class="kpis"><div class="kpi"><small>Articles suivis</small><b>${S.inv.length}</b></div><div class="kpi"><small>À racheter</small><b>${list.length}</b></div>
+    <div class="kpi"><small>Courses estimées</small><b class="num">${eur(total)}</b></div><div class="kpi"><small>Quantités à renseigner</small><b>${unk}</b></div></div>
+    ${S.inv.length ? '' : '<p class="small mute" style="margin:10px 0 0">Suis ce que tu as chez toi : l’appli fait ta liste de courses et Claude en tient compte pour ton budget.</p><div class="row" style="margin-top:8px"><button class="btn sm ghost" data-a="ess">Ajouter les essentiels (épicerie, ménage, hygiène)</button></div>'}</section>`;
+  if (list.length) html += `<div class="sec">🛒 Liste de courses</div><section class="card"><ul class="list">${list.map(i => `<li class="item"><button class="chk" data-a="buy" data-id="${i.id}" aria-label="Acheté : ajouter au stock"></button><div class="grow" data-a="ei" data-id="${i.id}"><div class="ttl">${esc(i.name)}</div><div class="meta"><span>${toBuy(i)} ${esc(i.unit || '')}</span>${i.price ? `<span class="num">≈ ${eur(toBuy(i) * i.price)}</span>` : '<span>prix ?</span>'}</div></div></li>`).join('')}</ul>
+    <div class="row" style="margin-top:8px"><span class="small mute grow">Coche un article une fois acheté : il est ajouté au stock.</span><button class="btn sm" data-a="buytx">Noter la dépense</button></div></section>`;
+  for (const [k, l] of Object.entries(INV_CATS)) {
+    const items = S.inv.filter(i => (i.cat || 'autre') === k).sort((a, b) => a.name.localeCompare(b.name)); if (!items.length) continue;
+    html += `<div class="sec">${l}</div><section class="card"><ul class="list">${items.map(i => `<li class="item"><div class="grow" data-a="ei" data-id="${i.id}"><div class="ttl">${esc(i.name)}</div><div class="meta">${pill(i)}${i.unit ? `<span>${esc(i.unit)}</span>` : ''}${i.price ? `<span class="num">${eur(i.price)}</span>` : ''}${i.exp ? `<span class="${diffDays(today(), i.exp) <= 3 ? 'late' : ''}">⏳ ${fmt(i.exp)}</span>` : ''}</div></div>
+      <div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="iq" data-id="${i.id}" data-n="-1" aria-label="Retirer 1 ${esc(i.name)}">−</button><b class="num" style="min-width:24px;text-align:center">${i.qty == null ? '?' : +i.qty}</b><button class="btn sm ghost" data-a="iq" data-id="${i.id}" data-n="1" aria-label="Ajouter 1 ${esc(i.name)}">＋</button></div></li>`).join('')}</ul></section>`;
+  }
+  return html;
+}
+
+/* ---------- Budget proposé par l'IA (Claude) ---------- */
+let sampleFn = null; // fonction Claude fournie par claude.ai, ou null hors de claude.ai
+function aiContext() {
+  const m = ym(today()), st = monthStats(m), next = addMonths(m, 1), hist = [];
+  let mm = addMonths(m, -1);
+  for (let i = 0; i < 6 && hist.length < 3; i++, mm = addMonths(mm, -1)) if (txM(mm).length) { const s = monthStats(mm); hist.push({ mois: mm, revenus: s.inc, depenses_par_categorie: s.by }); }
+  return {
+    date_du_jour: today(), mois: m,
+    revenus_du_mois: txM(m).filter(x => x.type === 'in').map(x => ({ libelle: x.label || INC[x.cat], montant: +x.amount })),
+    revenu_moyen_estime: Math.round(avgMonthly().inc),
+    depenses_deja_faites_ce_mois: st.by,
+    charges_et_revenus_fixes: S.recurring.map(r => ({ libelle: r.label, type: r.type === 'in' ? 'revenu' : 'charge', montant: +r.amount, categorie: r.cat, jour: r.day })),
+    epargne_programmee: S.accounts.filter(a => +a.monthly > 0).map(a => ({ compte: a.name, montant_mensuel: +a.monthly })),
+    comptes: S.accounts.map(a => ({ compte: a.name, type: ACC[a.type], solde: +a.balance || 0, objectif: +a.goal || null })),
+    historique_mois_precedents: hist,
+    budgets_actuels: S.budgets,
+    voyages_ce_mois_et_le_suivant: S.trips.filter(t => ym(t.start) === m || ym(t.start) === next).map(t => ({ destination: t.dest, objet: t.purpose, depart: t.start, retour: t.end, cout_prevu: tripCost(t), deja_reserve: !!t.transportBooked })),
+    inventaire_maison: S.inv.map(i => ({ article: i.name, rayon: INV_CATS[i.cat], quantite: i.qty, unite: i.unit, racheter_si_inferieur_a: i.min, prix_unitaire: i.price || null, peremption: i.exp || null })),
+    a_racheter: shopping().map(i => ({ article: i.name, quantite: toBuy(i), unite: i.unit, prix_unitaire: i.price || null })),
+    objectifs_financiers: S.goals.filter(g => g.area === 'finances').map(g => ({ objectif: g.title, progression: pct(goalProg(g)) })),
+  };
+}
+function aiPrompt(ctx) {
+  return `Tu es mon assistant budgétaire personnel. Je suis étudiant en alternance en France, j'entre dans la vie active fin 2027 et je veux prendre de bons automatismes financiers. J'ai un fils que je vais voir régulièrement (voyages).
+
+Propose-moi un budget pour le mois ${fmtM(ctx.mois)} à partir des données JSON ci-dessous.
+Règles :
+- Pars des revenus du mois (sinon du revenu moyen estimé). Réserve d'abord les charges fixes et l'épargne programmée (« se payer en premier »).
+- Appuie-toi sur mon historique réel par catégorie, sur les voyages prévus (à budgéter dans « voyages ») et sur mon inventaire : si j'ai déjà du stock, réduis le budget courses ; chiffre ce qui manque (prix moyen en France si le prix est inconnu).
+- Vise environ 50 % besoins / 30 % envies / 20 % épargne, de façon réaliste.
+- La somme des catégories (épargne comprise) ne doit pas dépasser le revenu pris en compte.
+- Montants en euros, arrondis à l'euro. Ton direct, bienveillant, tutoiement.
+
+Clés de catégories autorisées (clé = libellé) : ${Object.entries(EXP).map(([k, l]) => k + ' = ' + l).join(' ; ')}.
+
+Réponds uniquement avec un objet JSON de cette forme :
+{"resume":"2 à 3 phrases","revenu_pris_en_compte":1200,"categories":[{"cat":"courses","montant":180,"raison":"explication courte"}],"liste_courses":[{"article":"Riz","quantite":"2 paquets","prix_estime":3}],"conseils":["conseil concret 1","conseil concret 2","conseil concret 3"]}
+
+Données :
+${JSON.stringify(ctx)}`;
+}
+const AI_ERR = { not_granted: 'Tu as refusé l’accès à Claude pour cette page. Tu peux le réautoriser dans le menu Autorisations de la page.', rate_limited: 'Trop de demandes d’un coup : réessaie dans quelques minutes.', invalid_json: 'La réponse de Claude était illisible. Réessaie.', prompt_too_large: 'Trop de données à envoyer. Réduis l’historique ou l’inventaire.', session_expired: 'Ta session claude.ai a expiré : recharge la page.', refused: 'Claude n’a pas pu traiter cette demande.' };
+function aiCard() {
+  const last = S.aiLast;
+  return `<section class="card ai"><h2>✨ Budget proposé par l’IA</h2>
+    <p class="small mute" style="margin:0 0 10px">Claude analyse tes revenus du mois, tes charges fixes, ton historique de dépenses, tes voyages prévus et l’inventaire de ta maison, puis te propose un budget par catégorie et une liste de courses.</p>
+    ${sampleFn ? `<div class="row"><button class="btn" data-a="ai">Proposer mon budget de ${fmtM(ym(today()))}</button>${last ? `<button class="btn ghost sm" data-a="aiseen">Revoir la dernière (${fmt(last.at.slice(0, 10))})</button>` : ''}</div>`
+      : '<p class="small"><span class="pill warn">Indisponible ici</span> Ouvre l’appli depuis son lien claude.ai pour utiliser Claude.</p>'}</section>`;
+}
+function askAiAfterIncome() {
+  const d = $('#dlg');
+  d.innerHTML = `<div class="sheet"><header><h2>💰 Revenu enregistré</h2><button class="icon" data-close aria-label="Fermer">✕</button></header>
+    <p>Veux-tu que Claude te propose un budget pour ${fmtM(ym(today()))}, en tenant compte de ton historique, de tes voyages et de ton inventaire ?</p>
+    <footer><span class="grow"></span><button class="btn ghost" data-close>Plus tard</button><button class="btn" data-go>✨ Proposer mon budget</button></footer></div>`;
+  d.querySelectorAll('[data-close]').forEach(b => b.onclick = () => d.close());
+  d.querySelector('[data-go]').onclick = () => aiBudget();
+  d.showModal();
+}
+async function aiBudget() {
+  const d = $('#dlg');
+  if (!sampleFn) { if (d.open) d.close(); alert('Claude est disponible uniquement quand l’appli est ouverte depuis son lien claude.ai.'); return; }
+  const ctx = aiContext(), m = ctx.mois;
+  if (!ctx.revenus_du_mois.length && !ctx.revenu_moyen_estime) { if (d.open) d.close(); alert('Ajoute d’abord tes revenus du mois (ou ton salaire dans les revenus fixes).'); return; }
+  const ctl = new AbortController();
+  d.innerHTML = `<div class="sheet"><header><h2>✨ Claude prépare ton budget…</h2></header>
+    <p class="mute">Analyse de tes revenus, dépenses, voyages et de ton inventaire. Cela peut prendre jusqu’à une minute.</p><div class="loader" aria-hidden="true"></div>
+    <footer><span class="grow"></span><button class="btn ghost" data-stop>Arrêter</button></footer></div>`;
+  d.querySelector('[data-stop]').onclick = () => { ctl.abort(); d.close(); };
+  if (!d.open) d.showModal();
+  try {
+    const res = await sampleFn.json(aiPrompt(ctx), { signal: ctl.signal, modelTier: 'default' });
+    const clean = {
+      resume: String(res?.resume || ''),
+      revenu: +res?.revenu_pris_en_compte || 0,
+      categories: (Array.isArray(res?.categories) ? res.categories : []).filter(c => EXP[c?.cat] && +c.montant >= 0).map(c => ({ cat: c.cat, montant: Math.round(+c.montant), raison: String(c.raison || '') })),
+      courses: (Array.isArray(res?.liste_courses) ? res.liste_courses : []).slice(0, 40).map(c => ({ article: String(c?.article || ''), quantite: String(c?.quantite || ''), prix: +c?.prix_estime || 0 })),
+      conseils: (Array.isArray(res?.conseils) ? res.conseils : []).slice(0, 6).map(String),
+    };
+    if (!clean.categories.length) throw { code: 'invalid_json' };
+    S.aiLast = { month: m, at: new Date().toISOString(), res: clean }; save();
+    showAi(clean, m); render();
+  } catch (e) {
+    if (e && e.code === 'cancelled') return;
+    if (d.open) d.close();
+    alert(AI_ERR[e && e.code] || `Claude n’a pas pu répondre pour le moment (${(e && e.code) || 'erreur'}). Réessaie plus tard.`);
+  }
+}
+function showAi(r, m) {
+  const d = $('#dlg'), total = r.categories.reduce((s, c) => s + c.montant, 0), rest = r.revenu - total;
+  const courses = r.courses.reduce((s, c) => s + c.prix, 0);
+  d.innerHTML = `<div class="sheet"><header><h2>✨ Budget de ${esc(fmtM(m))}</h2><button class="icon" data-close aria-label="Fermer">✕</button></header>
+    ${r.resume ? `<p>${esc(r.resume)}</p>` : ''}
+    <div class="kpis" style="grid-template-columns:repeat(3,1fr)"><div class="kpi"><small>Revenu pris en compte</small><b class="num">${eur(r.revenu)}</b></div><div class="kpi"><small>Réparti</small><b class="num">${eur(total)}</b></div><div class="kpi"><small>Non alloué</small><b class="num ${rest < 0 ? 'neg' : ''}">${eur(rest)}</b></div></div>
+    <ul class="list" style="margin-top:8px">${r.categories.map(c => `<li class="item"><div class="grow"><div class="ttl">${esc(EXP[c.cat])}</div>${c.raison ? `<div class="meta">${esc(c.raison)}</div>` : ''}</div><b class="num">${eur(c.montant)}</b></li>`).join('')}</ul>
+    ${r.courses.length ? `<details style="margin-top:8px"><summary>🛒 Liste de courses proposée (≈ ${eur(courses)})</summary><ul class="list">${r.courses.map(c => `<li class="item"><div class="grow"><div class="ttl" style="font-weight:500">${esc(c.article)}</div><div class="meta">${esc(c.quantite)}</div></div>${c.prix ? `<span class="num small">${eur(c.prix)}</span>` : ''}</li>`).join('')}</ul></details>` : ''}
+    ${r.conseils.length ? `<div class="sec" style="margin-top:14px">💡 Conseils</div><ul style="margin:0;padding-left:18px">${r.conseils.map(c => `<li style="margin-bottom:4px">${esc(c)}</li>`).join('')}</ul>` : ''}
+    <p class="small mute">Proposition générée par l’IA : vérifie-la avant de l’appliquer.</p>
+    <footer><span class="grow"></span><button class="btn ghost" data-close>Fermer</button><button class="btn" data-apply>Appliquer comme budgets</button></footer></div>`;
+  d.querySelectorAll('[data-close]').forEach(b => b.onclick = () => d.close());
+  d.querySelector('[data-apply]').onclick = () => {
+    S.budgets = {}; for (const c of r.categories) if (c.montant > 0) S.budgets[c.cat] = c.montant;
+    save(); d.close(); UI.mTab = 'month'; location.hash = '#money'; render(); toast('Budgets appliqués ✓');
+  };
+  if (!d.open) d.showModal();
+}
+
 /* ---------- Actions ---------- */
 const findTrip = id => S.trips.find(x => x.id === id), findGoal = id => S.goals.find(x => x.id === id);
 const ACT = {
@@ -773,6 +931,13 @@ const ACT = {
     else S.tx.push({ id: uid(), type: r.type, cat: r.cat, amount: r.amount, label: r.label, date: `${m}-${pad(r.day)}`, rec: r.id });
     save(); render();
   },
+  ai: () => aiBudget(), aiseen: () => S.aiLast && showAi(S.aiLast.res, S.aiLast.month),
+  gostock: () => { UI.mTab = 'stock'; location.hash = '#money'; render(); },
+  ni: () => editItem(null), ei: d => editItem(d.id),
+  iq: d => { const i = S.inv.find(x => x.id === d.id); i.qty = Math.max(0, (i.qty == null ? (+d.n > 0 ? 0 : 1) : +i.qty) + +d.n); save(); render(); },
+  buy: d => { const i = S.inv.find(x => x.id === d.id); const n = toBuy(i); i.qty = (+i.qty || 0) + n; save(); render(); toast(`${i.name} : +${n} ${i.unit || ''} en stock`); },
+  buytx: () => editTx(null, 'out', { amount: Math.round(shopping().reduce((s, i) => s + toBuy(i) * (+i.price || 0), 0) * 100) / 100 || null, label: 'Courses', cat: 'courses' }),
+  ess: () => { const have = new Set(S.inv.map(i => i.name.toLowerCase())); for (const [name, cat, unit, price] of ESSENTIALS) if (!have.has(name.toLowerCase())) S.inv.push({ id: uid(), name, cat, unit, price, qty: null, min: 1, target: 3 }); save(); render(); toast('Indique maintenant tes quantités avec − / ＋'); },
   nacc: () => editAcc(null), eacc: d => editAcc(d.id), contrib: d => contribute(d.id), bud: editBudgets,
   start: d => { S.settings.name = ($('#w-name')?.value || '').trim(); if (d.tpl) seedTemplate(); S.onboarded = true; save(); render(); if (d.tpl) toast('Modèle chargé : tout est modifiable ✎'); },
   sset: () => { S.settings.name = $('#s-name').value.trim(); S.settings.morning = +$('#s-morning').value; S.settings.theme = $('#s-theme').value; applyTheme(); save(); toast('Réglages enregistrés'); },
@@ -832,6 +997,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) { re
 
 applyTheme();
 render();
+if (window.claude && typeof claude.use === 'function') claude.use('sample').then(f => { sampleFn = f; render(); }).catch(() => {});
 checkReminders();
 setInterval(checkReminders, 30000);
 // Changement de jour pendant que l'appli reste ouverte

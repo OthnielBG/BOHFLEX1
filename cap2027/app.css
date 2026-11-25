@@ -147,3 +147,10 @@ svg.chart .ln{fill:none;stroke:var(--acc);stroke-width:2.5}
 svg.chart .ar{fill:var(--acc);opacity:.12}
 svg.chart text{fill:var(--mute);font-size:11px}
 details summary{cursor:pointer;font-weight:600}
+.ai{border-color:color-mix(in srgb,var(--acc) 45%,var(--line));background:linear-gradient(180deg,var(--soft),var(--card) 70%)}
+.loader{height:6px;border-radius:99px;background:var(--line);overflow:hidden;position:relative;margin:14px 0}
+.loader::after{content:"";position:absolute;inset:0;width:40%;border-radius:99px;background:var(--acc);animation:ld 1.2s ease-in-out infinite}
+@keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@media (prefers-reduced-motion:reduce){.loader::after{animation:none;width:100%;opacity:.5}}
+.quick{grid-template-columns:repeat(4,1fr)}
+@media (max-width:380px){.quick{grid-template-columns:repeat(2,1fr)}}
