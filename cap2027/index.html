@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cap 2027</title>
+<meta name="description" content="Objectifs, to-do, planning, voyages, budget, épargne et investissements pour 2027.">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cap 2027">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <h1 id="title">Aujourd'hui</h1>
+  <a class="icon" href="#settings" aria-label="Réglages">⚙︎</a>
+</header>
+<main id="main" tabindex="-1"></main>
+<button class="fab" data-a="quick" aria-label="Ajouter">＋</button>
+<nav class="nav" aria-label="Navigation principale">
+  <a href="#today"><b>☀️</b><span>Jour</span></a>
+  <a href="#tasks"><b>✅</b><span>Tâches</span></a>
+  <a href="#agenda"><b>📅</b><span>Agenda</span></a>
+  <a href="#goals"><b>🎯</b><span>Objectifs</span></a>
+  <a href="#trips"><b>🧳</b><span>Voyages</span></a>
+  <a href="#money"><b>💶</b><span>Argent</span></a>
+</nav>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
