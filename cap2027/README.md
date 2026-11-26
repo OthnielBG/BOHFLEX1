@@ -25,7 +25,7 @@ Pour l'avoir sur le téléphone, il faut la mettre en ligne en HTTPS (GitHub Pag
 | Objectifs | Objectifs 2027 par domaine (études, alternance, finances, famille, perso, santé), mesurés par étapes, par compteur ou par le solde d'un compte |
 | Voyages | Dates, transport et logement (réservé ou non), coûts, checklist, budget annuel et montant à mettre de côté chaque mois |
 | Argent | **Mois** : revenus, dépenses, épargne, reste, budgets par catégorie, revenus et charges fixes à cocher. **Épargne** : patrimoine, courbe, matelas de précaution, comptes (livret, PEA, AV, crypto…) avec versements et +/- values. **Budget** : mois type, reste à vivre, règle 50/30/20 |
-| Argent → Maison | **Inventaire** (épicerie, frais, ménage, hygiène) : quantités, seuil de rachat, stock idéal, prix, péremption. **Liste de courses** générée automatiquement, coût estimé, « Noter la dépense » en un clic |
+| Argent → Maison | **Inventaire** (épicerie, frais, ménage, hygiène) : quantités, **niveau en % de l’unité entamée** (huile, lessive, dentifrice…) avec alerte sous un seuil (25 % par défaut), seuil de rachat, stock idéal, prix, péremption. **Liste de courses** générée automatiquement, coût estimé, « Noter la dépense » en un clic |
 | Argent → Budget | **✨ Budget proposé par l'IA** (Claude) : à partir des revenus du mois, charges fixes, épargne programmée, historique, voyages prévus et inventaire. Proposé aussi automatiquement après l'ajout d'un revenu. « Appliquer comme budgets » remplit les plafonds par catégorie |
 | Réglages | Prénom, heure du résumé du matin, thème, notifications, export agenda `.ics`, sauvegarde et import JSON |
 

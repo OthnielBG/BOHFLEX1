@@ -29,12 +29,14 @@ const REMIND = { '-1': 'Pas de rappel', '0': "À l'heure", '15': '15 min avant',
 const TRIP_CHECK = ['Confirmer les dates de visite', 'Poser les jours (école / entreprise) si besoin', 'Prévoir les activités avec mon fils', 'Préparer le sac'];
 const INV_CATS = { alim: '🥫 Épicerie', frais: '🥬 Frais', menage: '🧽 Ménage / maison', hygiene: '🧴 Hygiène', autre: '📦 Autre' };
 const ESSENTIALS = [
-  ['Riz', 'alim', 'paquet', 1.5], ['Pâtes', 'alim', 'paquet', 1], ['Huile', 'alim', 'bouteille', 3], ['Farine / semoule', 'alim', 'paquet', 1.2],
-  ['Conserves', 'alim', 'boîte', 1], ['Café / thé', 'alim', 'paquet', 3.5], ['Sucre', 'alim', 'paquet', 1.2], ['Œufs', 'frais', 'boîte de 6', 2],
-  ['Lait', 'frais', 'brique', 1], ['Liquide vaisselle', 'menage', 'flacon', 1.8], ['Lessive', 'menage', 'bidon', 8], ['Éponges', 'menage', 'lot', 2],
-  ['Sacs poubelle', 'menage', 'rouleau', 2.5], ['Papier toilette', 'hygiene', 'paquet', 4], ['Gel douche', 'hygiene', 'flacon', 2.5],
-  ['Dentifrice', 'hygiene', 'tube', 2], ['Déodorant', 'hygiene', 'unité', 3],
+  // [nom, rayon, unité, prix, suivi en % (produit entamé qui se vide petit à petit)]
+  ['Riz', 'alim', 'paquet', 1.5, 1], ['Pâtes', 'alim', 'paquet', 1], ['Huile', 'alim', 'bouteille', 3, 1], ['Farine / semoule', 'alim', 'paquet', 1.2, 1],
+  ['Conserves', 'alim', 'boîte', 1], ['Café / thé', 'alim', 'paquet', 3.5, 1], ['Sucre', 'alim', 'paquet', 1.2, 1], ['Œufs', 'frais', 'boîte de 6', 2],
+  ['Lait', 'frais', 'brique', 1], ['Liquide vaisselle', 'menage', 'flacon', 1.8, 1], ['Lessive', 'menage', 'bidon', 8, 1], ['Éponges', 'menage', 'lot', 2],
+  ['Sacs poubelle', 'menage', 'rouleau', 2.5], ['Papier toilette', 'hygiene', 'paquet', 4], ['Gel douche', 'hygiene', 'flacon', 2.5, 1],
+  ['Dentifrice', 'hygiene', 'tube', 2, 1], ['Déodorant', 'hygiene', 'unité', 3, 1],
 ];
+const PCT_DEF = { pct: true, min: 0, target: 2, alert: 25, level: 100 };
 const TITLES = { today: "Aujourd'hui", tasks: 'Tâches & routines', agenda: 'Agenda', goals: 'Objectifs 2027', trips: 'Voyages', money: 'Argent', settings: 'Réglages' };
 
 /* ---------- Utilitaires ---------- */
@@ -69,6 +71,10 @@ const DEF = () => ({
   tx: [], recurring: [], budgets: {}, accounts: [], worth: {}, notified: {}, inv: [], aiLast: null,
 });
 let S = load();
+(function migrateInv() {
+  const pctNames = new Set(ESSENTIALS.filter(e => e[4]).map(e => e[0].toLowerCase()));
+  for (const i of S.inv || []) if (i.pct === undefined && pctNames.has((i.name || '').toLowerCase()) && +i.min === 1 && +i.target === 3) Object.assign(i, PCT_DEF);
+})();
 function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v) return Object.assign(DEF(), r, { settings: Object.assign(DEF().settings, r.settings) }); } catch (e) { /* stockage indisponible */ }
   return DEF();
@@ -759,8 +765,17 @@ function download(name, text, type) {
 }
 
 /* ---------- Inventaire maison ---------- */
-const invStatus = i => i.qty == null || i.qty === '' ? 'unk' : +i.qty <= 0 ? 'out' : +i.qty <= (+i.min || 0) ? 'low' : 'ok';
-const toBuy = i => Math.max(1, Math.ceil((+i.target || (+i.min || 0) + 1) - (+i.qty || 0)));
+// Produit suivi en % : stock effectif = unités pleines + niveau de l'unité entamée (ex. 1 tube à 10 % = 0,1)
+const lvl = i => i.level == null || i.level === '' ? 100 : Math.max(0, Math.min(100, +i.level));
+const eff = i => i.pct ? (+i.qty > 0 ? +i.qty - 1 + lvl(i) / 100 : 0) : (+i.qty || 0);
+const invStatus = i => {
+  if (i.qty == null || i.qty === '') return 'unk';
+  const e = eff(i);
+  if (e <= 0) return 'out';
+  if (i.pct) return e <= (+i.min || 0) + (i.alert == null ? 25 : +i.alert) / 100 ? 'low' : 'ok';
+  return e <= (+i.min || 0) ? 'low' : 'ok';
+};
+const toBuy = i => Math.max(1, Math.ceil((+i.target || (+i.min || 0) + 1) - eff(i)));
 const shopping = () => S.inv.filter(i => ['out', 'low'].includes(invStatus(i)));
 function editItem(id) {
   const i = S.inv.find(x => x.id === id) || { cat: 'alim', min: 1, target: 3, qty: 1 };
@@ -775,8 +790,14 @@ function editItem(id) {
       { k: 'min', l: 'Racheter quand ≤', type: 'number', v: i.min, half: 1, step: '0.5' },
       { k: 'target', l: 'Stock idéal', type: 'number', v: i.target, half: 1, step: '0.5' },
       { k: 'exp', l: 'Date de péremption (facultatif)', type: 'date', v: i.exp },
+      { k: 'pct', l: 'Suivre le niveau en % (huile, lessive, dentifrice…)', type: 'checkbox', v: i.pct },
+      { k: 'level', l: 'Niveau de l’unité entamée (%)', type: 'number', v: i.pct ? lvl(i) : 100, half: 1, step: '5' },
+      { k: 'alert', l: 'Alerte quand il reste ≤ (%)', type: 'number', v: i.alert ?? 25, half: 1, step: '5', hint: 'Pour un suivi en %, « Racheter quand ≤ » compte les unités pleines de réserve (0 = seulement l’unité entamée).' },
     ],
-    onSave: v => { if (id) Object.assign(i, v); else S.inv.push({ id: uid(), ...v }); },
+    onSave: v => {
+      v.level = Math.max(0, Math.min(100, v.level ?? 100)); v.alert = Math.max(0, Math.min(100, v.alert ?? 25));
+      if (id) Object.assign(i, v); else S.inv.push({ id: uid(), ...v });
+    },
     onDelete: id && (() => { S.inv = S.inv.filter(x => x.id !== id); }),
   });
 }
@@ -791,7 +812,8 @@ function vStock() {
     <div class="row" style="margin-top:8px"><span class="small mute grow">Coche un article une fois acheté : il est ajouté au stock.</span><button class="btn sm" data-a="buytx">Noter la dépense</button></div></section>`;
   for (const [k, l] of Object.entries(INV_CATS)) {
     const items = S.inv.filter(i => (i.cat || 'autre') === k).sort((a, b) => a.name.localeCompare(b.name)); if (!items.length) continue;
-    html += `<div class="sec">${l}</div><section class="card"><ul class="list">${items.map(i => `<li class="item"><div class="grow" data-a="ei" data-id="${i.id}"><div class="ttl">${esc(i.name)}</div><div class="meta">${pill(i)}${i.unit ? `<span>${esc(i.unit)}</span>` : ''}${i.price ? `<span class="num">${eur(i.price)}</span>` : ''}${i.exp ? `<span class="${diffDays(today(), i.exp) <= 3 ? 'late' : ''}">⏳ ${fmt(i.exp)}</span>` : ''}</div></div>
+    html += `<div class="sec">${l}</div><section class="card"><ul class="list">${items.map(i => `<li class="item"><div class="grow" data-a="ei" data-id="${i.id}"><div class="ttl">${esc(i.name)}</div><div class="meta">${pill(i)}${i.unit ? `<span>${esc(i.unit)}</span>` : ''}${i.price ? `<span class="num">${eur(i.price)}</span>` : ''}${i.exp ? `<span class="${diffDays(today(), i.exp) <= 3 ? 'late' : ''}">⏳ ${fmt(i.exp)}</span>` : ''}</div>
+      ${i.pct && +i.qty > 0 ? `<div class="lvl" data-stop><span class="small mute">Entamé${+i.qty > 1 ? ` (+${+i.qty - 1} plein${+i.qty > 2 ? 's' : ''})` : ''}</span><input type="range" min="0" max="100" step="5" value="${lvl(i)}" data-lvl="${i.id}" aria-label="Niveau restant de ${esc(i.name)}" style="--v:${lvl(i)}%;--c:${invStatus(i) === 'ok' ? 'var(--ok)' : 'var(--bad)'}"><b class="num small" data-lvlv="${i.id}">${lvl(i)} %</b></div>` : ''}</div>
       <div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="iq" data-id="${i.id}" data-n="-1" aria-label="Retirer 1 ${esc(i.name)}">−</button><b class="num" style="min-width:24px;text-align:center">${i.qty == null ? '?' : +i.qty}</b><button class="btn sm ghost" data-a="iq" data-id="${i.id}" data-n="1" aria-label="Ajouter 1 ${esc(i.name)}">＋</button></div></li>`).join('')}</ul></section>`;
   }
   return html;
@@ -814,7 +836,7 @@ function aiContext() {
     historique_mois_precedents: hist,
     budgets_actuels: S.budgets,
     voyages_ce_mois_et_le_suivant: S.trips.filter(t => ym(t.start) === m || ym(t.start) === next).map(t => ({ destination: t.dest, objet: t.purpose, depart: t.start, retour: t.end, cout_prevu: tripCost(t), deja_reserve: !!t.transportBooked })),
-    inventaire_maison: S.inv.map(i => ({ article: i.name, rayon: INV_CATS[i.cat], quantite: i.qty, unite: i.unit, racheter_si_inferieur_a: i.min, prix_unitaire: i.price || null, peremption: i.exp || null })),
+    inventaire_maison: S.inv.map(i => ({ article: i.name, rayon: INV_CATS[i.cat], quantite: i.qty, niveau_unite_entamee: i.pct ? lvl(i) + ' %' : undefined, unite: i.unit, racheter_si_inferieur_a: i.min, prix_unitaire: i.price || null, peremption: i.exp || null })),
     a_racheter: shopping().map(i => ({ article: i.name, quantite: toBuy(i), unite: i.unit, prix_unitaire: i.price || null })),
     objectifs_financiers: S.goals.filter(g => g.area === 'finances').map(g => ({ objectif: g.title, progression: pct(goalProg(g)) })),
   };
@@ -934,10 +956,16 @@ const ACT = {
   ai: () => aiBudget(), aiseen: () => S.aiLast && showAi(S.aiLast.res, S.aiLast.month),
   gostock: () => { UI.mTab = 'stock'; location.hash = '#money'; render(); },
   ni: () => editItem(null), ei: d => editItem(d.id),
-  iq: d => { const i = S.inv.find(x => x.id === d.id); i.qty = Math.max(0, (i.qty == null ? (+d.n > 0 ? 0 : 1) : +i.qty) + +d.n); save(); render(); },
-  buy: d => { const i = S.inv.find(x => x.id === d.id); const n = toBuy(i); i.qty = (+i.qty || 0) + n; save(); render(); toast(`${i.name} : +${n} ${i.unit || ''} en stock`); },
+  iq: d => {
+    const i = S.inv.find(x => x.id === d.id), before = +i.qty || 0;
+    i.qty = Math.max(0, (i.qty == null ? (+d.n > 0 ? 0 : 1) : before) + +d.n);
+    // Suivi en % : « − » = l'unité entamée est finie, on en ouvre une pleine ; « ＋ » depuis 0 = unité neuve
+    if (i.pct && (+d.n < 0 || before === 0)) i.level = i.qty > 0 ? 100 : 0;
+    save(); render();
+  },
+  buy: d => { const i = S.inv.find(x => x.id === d.id); const n = toBuy(i); if (i.pct && !(+i.qty > 0)) i.level = 100; i.qty = (+i.qty || 0) + n; save(); render(); toast(`${i.name} : +${n} ${i.unit || ''} en stock`); },
   buytx: () => editTx(null, 'out', { amount: Math.round(shopping().reduce((s, i) => s + toBuy(i) * (+i.price || 0), 0) * 100) / 100 || null, label: 'Courses', cat: 'courses' }),
-  ess: () => { const have = new Set(S.inv.map(i => i.name.toLowerCase())); for (const [name, cat, unit, price] of ESSENTIALS) if (!have.has(name.toLowerCase())) S.inv.push({ id: uid(), name, cat, unit, price, qty: null, min: 1, target: 3 }); save(); render(); toast('Indique maintenant tes quantités avec − / ＋'); },
+  ess: () => { const have = new Set(S.inv.map(i => i.name.toLowerCase())); for (const [name, cat, unit, price, p] of ESSENTIALS) if (!have.has(name.toLowerCase())) S.inv.push({ id: uid(), name, cat, unit, price, qty: null, ...(p ? PCT_DEF : { min: 1, target: 3 }) }); save(); render(); toast('Indique maintenant tes quantités avec − / ＋'); },
   nacc: () => editAcc(null), eacc: d => editAcc(d.id), contrib: d => contribute(d.id), bud: editBudgets,
   start: d => { S.settings.name = ($('#w-name')?.value || '').trim(); if (d.tpl) seedTemplate(); S.onboarded = true; save(); render(); if (d.tpl) toast('Modèle chargé : tout est modifiable ✎'); },
   sset: () => { S.settings.name = $('#s-name').value.trim(); S.settings.morning = +$('#s-morning').value; S.settings.theme = $('#s-theme').value; applyTheme(); save(); toast('Réglages enregistrés'); },
@@ -954,6 +982,7 @@ const ACT = {
   wipe: () => { if (confirm('Effacer TOUTES les données ? Pense à exporter une sauvegarde avant.') && confirm('Vraiment tout effacer ?')) { S = DEF(); save(); location.hash = '#today'; render(); } },
 };
 document.addEventListener('click', e => {
+  if (e.target.closest('[data-stop]')) return;
   const b = e.target.closest('[data-a]'); if (!b || b.closest('dialog')) return;
   const fn = ACT[b.dataset.a]; if (!fn) return;
   e.preventDefault(); fn(b.dataset, b);
@@ -967,7 +996,19 @@ document.addEventListener('submit', e => {
   save(); render();
   const nf = document.querySelector(`form.addstep[data-${f.dataset.g ? 'g' : 't'}="${f.dataset.g || f.dataset.t}"] input`); if (nf) nf.focus();
 });
+document.addEventListener('input', e => {
+  const id = e.target.dataset && e.target.dataset.lvl; if (!id) return;
+  e.target.style.setProperty('--v', e.target.value + '%');
+  const out = document.querySelector(`[data-lvlv="${id}"]`); if (out) out.textContent = e.target.value + ' %';
+});
 document.addEventListener('change', e => {
+  const lid = e.target.dataset && e.target.dataset.lvl;
+  if (lid) {
+    const i = S.inv.find(x => x.id === lid); if (!i) return;
+    i.level = +e.target.value;
+    if (i.level === 0) { i.qty = Math.max(0, (+i.qty || 0) - 1); i.level = i.qty > 0 ? 100 : 0; toast(i.qty > 0 ? `${i.name} terminé : unité suivante entamée` : `${i.name} épuisé, ajouté à la liste de courses`); }
+    save(); render(); return;
+  }
   if (e.target.id !== 'imp') return;
   const file = e.target.files[0]; if (!file) return;
   file.text().then(txt => {
