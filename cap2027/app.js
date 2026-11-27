@@ -710,7 +710,7 @@ function dueList(now) {
 async function sysNotify(title, body, tag) {
   try {
     const r = 'serviceWorker' in navigator && await navigator.serviceWorker.getRegistration();
-    if (r) { await r.showNotification(title, { body, tag, icon: 'icon-192.png', badge: 'icon-192.png' }); return; }
+    if (r) { await r.showNotification(title, { body, tag, icon: 'icon-192.png', badge: 'badge-96.png' }); return; }
     new Notification(title, { body, tag });
   } catch (e) { toast(title + ' — ' + body); }
 }

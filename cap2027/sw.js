@@ -1,6 +1,6 @@
 /* Cap 2027 — service worker : hors connexion + affichage des notifications. */
-var CACHE = "cap2027-v2";
-var CORE = ["./", "index.html", "app.css", "app.js", "icon.svg", "icon-192.png", "icon-512.png", "manifest.webmanifest"];
+var CACHE = "cap2027-v3";
+var CORE = ["./", "index.html", "app.css", "app.js", "icon.svg", "icon-192.png", "icon-512.png", "badge-96.png", "manifest.webmanifest"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
