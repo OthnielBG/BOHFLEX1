@@ -11,7 +11,9 @@ cd cap2027
 python3 -m http.server 8000   # puis http://localhost:8000
 ```
 
-Pour l'avoir sur le téléphone, il faut la mettre en ligne en HTTPS (GitHub Pages, Netlify…), l'ouvrir, puis :
+En ligne (GitHub Pages, branche `ccr-ab227ae9-nwy59e`, dossier racine) : **https://othnielbg.github.io/BOHFLEX1/cap2027/**
+
+Pour l'installer, ouvrir ce lien sur le téléphone, puis :
 - **Android / Chrome** : menu ⋮ → « Installer l'application »
 - **iPhone / Safari** : Partager → « Sur l'écran d'accueil » (obligatoire sur iPhone pour les notifications)
 
@@ -41,4 +43,4 @@ Réglages → Exporter (JSON). Il faut faire une sauvegarde régulièrement et a
 
 ## IA (Claude)
 
-La fonction IA utilise la capacité `sample` des artifacts claude.ai : la page interroge Claude **avec le compte Claude de la personne qui l'ouvre**. Il n'y a pas de clé API ni de serveur. Une autorisation est demandée au premier usage. Elle ne fonctionne que si l'appli est ouverte depuis son lien claude.ai. Ailleurs, le bouton affiche « Indisponible ici ». Seules les données nécessaires (revenus, charges, historique, voyages, inventaire) sont envoyées, au moment du clic.
+La fonction IA utilise la capacité `sample` des artifacts claude.ai : la page interroge Claude **avec le compte Claude de la personne qui l'ouvre**. Il n'y a pas de clé API ni de serveur. Une autorisation est demandée au premier usage. Elle ne fonctionne que si l'appli est ouverte depuis son lien claude.ai. Ailleurs (par exemple sur GitHub Pages), le bouton « Copier ma demande pour Claude » copie la demande et les données du mois pour les coller dans l'appli Claude. Seules les données nécessaires (revenus, charges, historique, voyages, inventaire) sont envoyées, au moment du clic.

@@ -2,7 +2,8 @@
 /* Cap 2027 — objectifs, tâches, agenda, voyages, budget, épargne.
    Toutes les données restent dans le navigateur (localStorage). Aucune dépendance. */
 
-const KEY = 'cap2027-data', YEAR = 2027;
+const KEY = 'cap2027-v1', YEAR = 2027;
+try { localStorage.removeItem('cap2027-data'); } catch (e) { /* données de test de la version précédente */ }
 
 /* ---------- Référentiels ---------- */
 const AREAS = {
@@ -841,7 +842,7 @@ function aiContext() {
     objectifs_financiers: S.goals.filter(g => g.area === 'finances').map(g => ({ objectif: g.title, progression: pct(goalProg(g)) })),
   };
 }
-function aiPrompt(ctx) {
+function aiPrompt(ctx, asJson = true) {
   return `Tu es mon assistant budgétaire personnel. Je suis étudiant en alternance en France, j'entre dans la vie active fin 2027 et je veux prendre de bons automatismes financiers. J'ai un fils que je vais voir régulièrement (voyages).
 
 Propose-moi un budget pour le mois ${fmtM(ctx.mois)} à partir des données JSON ci-dessous.
@@ -854,8 +855,8 @@ Règles :
 
 Clés de catégories autorisées (clé = libellé) : ${Object.entries(EXP).map(([k, l]) => k + ' = ' + l).join(' ; ')}.
 
-Réponds uniquement avec un objet JSON de cette forme :
-{"resume":"2 à 3 phrases","revenu_pris_en_compte":1200,"categories":[{"cat":"courses","montant":180,"raison":"explication courte"}],"liste_courses":[{"article":"Riz","quantite":"2 paquets","prix_estime":3}],"conseils":["conseil concret 1","conseil concret 2","conseil concret 3"]}
+${asJson ? `Réponds uniquement avec un objet JSON de cette forme :
+{"resume":"2 à 3 phrases","revenu_pris_en_compte":1200,"categories":[{"cat":"courses","montant":180,"raison":"explication courte"}],"liste_courses":[{"article":"Riz","quantite":"2 paquets","prix_estime":3}],"conseils":["conseil concret 1","conseil concret 2","conseil concret 3"]}` : `Réponds en français, de façon claire et lisible sur téléphone : un court résumé, puis un tableau « catégorie | montant | pourquoi », puis la liste de courses avec prix estimés, puis 3 conseils concrets.`}
 
 Données :
 ${JSON.stringify(ctx)}`;
@@ -866,7 +867,7 @@ function aiCard() {
   return `<section class="card ai"><h2>✨ Budget proposé par l’IA</h2>
     <p class="small mute" style="margin:0 0 10px">Claude analyse tes revenus du mois, tes charges fixes, ton historique de dépenses, tes voyages prévus et l’inventaire de ta maison, puis te propose un budget par catégorie et une liste de courses.</p>
     ${sampleFn ? `<div class="row"><button class="btn" data-a="ai">Proposer mon budget de ${fmtM(ym(today()))}</button>${last ? `<button class="btn ghost sm" data-a="aiseen">Revoir la dernière (${fmt(last.at.slice(0, 10))})</button>` : ''}</div>`
-      : '<p class="small"><span class="pill warn">Indisponible ici</span> Ouvre l’appli depuis son lien claude.ai pour utiliser Claude.</p>'}</section>`;
+      : `<button class="btn" data-a="aicopy">📋 Copier ma demande pour Claude</button><p class="small mute" style="margin:8px 0 0">Ici, l’appli ne peut pas appeler Claude directement : copie la demande (avec tes données du mois), puis colle-la dans l’appli Claude ou sur claude.ai.</p>`}</section>`;
 }
 function askAiAfterIncome() {
   const d = $('#dlg');
@@ -953,7 +954,14 @@ const ACT = {
     else S.tx.push({ id: uid(), type: r.type, cat: r.cat, amount: r.amount, label: r.label, date: `${m}-${pad(r.day)}`, rec: r.id });
     save(); render();
   },
-  ai: () => aiBudget(), aiseen: () => S.aiLast && showAi(S.aiLast.res, S.aiLast.month),
+  ai: () => aiBudget(),
+  aicopy: async () => {
+    const ctx = aiContext();
+    if (!ctx.revenus_du_mois.length && !ctx.revenu_moyen_estime) { alert('Ajoute d’abord tes revenus du mois (ou ton salaire dans les revenus fixes).'); return; }
+    const txt = aiPrompt(ctx, false);
+    try { await navigator.clipboard.writeText(txt); toast('Demande copiée : colle-la dans l’appli Claude'); }
+    catch (e) { download('demande-budget-claude.txt', txt, 'text/plain'); toast('Copie impossible : fichier texte téléchargé'); }
+  }, aiseen: () => S.aiLast && showAi(S.aiLast.res, S.aiLast.month),
   gostock: () => { UI.mTab = 'stock'; location.hash = '#money'; render(); },
   ni: () => editItem(null), ei: d => editItem(d.id),
   iq: d => {
