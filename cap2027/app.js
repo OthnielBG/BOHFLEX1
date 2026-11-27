@@ -2,7 +2,7 @@
 /* Cap 2027 — objectifs, tâches, agenda, voyages, budget, épargne.
    Toutes les données restent dans le navigateur (localStorage). Aucune dépendance. */
 
-const KEY = 'cap2027-v1', YEAR = 2027, VERSION = '1.5';
+const KEY = 'cap2027-v1', YEAR = 2027, VERSION = '1.6';
 try { localStorage.removeItem('cap2027-data'); } catch (e) { /* données de test de la version précédente */ }
 
 /* ---------- Référentiels ---------- */

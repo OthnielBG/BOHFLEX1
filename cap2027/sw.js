@@ -1,5 +1,5 @@
 /* Cap 2027 — service worker : hors connexion + affichage des notifications. */
-var CACHE = "cap2027-v5";
+var CACHE = "cap2027-v6";
 var CORE = ["./", "index.html", "app.css", "app.js", "icon.svg", "icon-192.png", "icon-512.png", "badge-96.png", "firebase-config.js", "sync.js", "manifest.webmanifest"];
 
 self.addEventListener("install", function (e) {
