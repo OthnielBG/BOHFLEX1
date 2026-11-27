@@ -2,7 +2,7 @@
 /* Cap 2027 — objectifs, tâches, agenda, voyages, budget, épargne.
    Toutes les données restent dans le navigateur (localStorage). Aucune dépendance. */
 
-const KEY = 'cap2027-v1', YEAR = 2027, VERSION = '1.4';
+const KEY = 'cap2027-v1', YEAR = 2027, VERSION = '1.5';
 try { localStorage.removeItem('cap2027-data'); } catch (e) { /* données de test de la version précédente */ }
 
 /* ---------- Référentiels ---------- */
@@ -80,9 +80,72 @@ function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v) return Object.assign(DEF(), r, { settings: Object.assign(DEF().settings, r.settings) }); } catch (e) { /* stockage indisponible */ }
   return DEF();
 }
-function save() {
+/* ---------- Horodatage des modifications (pour fusionner entre appareils) ----------
+   Chaque élément d'une liste reçoit _u (date de sa dernière modification), chaque suppression
+   laisse une trace dans _del, et chaque réglage hors liste est daté dans _kt. Ainsi deux appareils
+   modifiés séparément peuvent être fusionnés sans rien perdre. */
+const strip = it => { const { _u, ...rest } = it; return JSON.stringify(rest); };
+function snapMap(st) {
+  const m = {};
+  for (const k in st) {
+    if (k[0] === '_') continue;
+    if (Array.isArray(st[k])) { for (const it of st[k]) if (it && it.id) m[k + ':' + it.id] = strip(it); }
+    else m['#' + k] = JSON.stringify(st[k]);
+  }
+  return m;
+}
+let lastMap = snapMap(S);
+function stamp() {
+  const now = Date.now(), cur = snapMap(S);
+  S._del = S._del || {}; S._kt = S._kt || {};
+  for (const k in cur) {
+    if (cur[k] === lastMap[k]) continue;
+    if (k[0] === '#') S._kt[k.slice(1)] = now;
+    else { const [col, id] = k.split(':'); const it = S[col].find(x => x.id === id); if (it) it._u = now; delete S._del[k]; }
+  }
+  for (const k in lastMap) if (!(k in cur) && k[0] !== '#') S._del[k] = now;
+  const lim = now - 120 * 864e5; for (const k in S._del) if (S._del[k] < lim) delete S._del[k];
+  lastMap = cur;
+}
+function writeLocal() {
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Sauvegarde impossible : stockage du navigateur indisponible'); }
 }
+function save() {
+  stamp(); writeLocal();
+  if (window.CapSync && window.CapSync.push) window.CapSync.push();
+}
+// Fusion de deux états : élément par élément pour les listes, réglage par réglage sinon.
+function mergeState(L, R) {
+  const out = {}, del = { ...(L._del || {}) }, kt = { ...(L._kt || {}) };
+  for (const k in R._del || {}) del[k] = Math.max(del[k] || 0, R._del[k]);
+  for (const k in R._kt || {}) kt[k] = Math.max(kt[k] || 0, R._kt[k]);
+  for (const key of new Set([...Object.keys(L), ...Object.keys(R)])) {
+    if (key[0] === '_') continue;
+    const a = L[key], b = R[key];
+    if (Array.isArray(a) || Array.isArray(b)) {
+      const m = new Map();
+      for (const it of [...(a || []), ...(b || [])]) { if (!it || !it.id) continue; const p = m.get(it.id); if (!p || (it._u || 0) > (p._u || 0)) m.set(it.id, it); }
+      out[key] = [...m.values()].filter(it => !((del[key + ':' + it.id] || 0) >= (it._u || 0) && del[key + ':' + it.id]));
+    } else if (key === 'notified') out[key] = { ...(b || {}), ...(a || {}) };
+    else out[key] = (((R._kt || {})[key] || 0) > ((L._kt || {})[key] || 0)) ? b : (a !== undefined ? a : b);
+  }
+  out._del = del; out._kt = kt;
+  return out;
+}
+// Forme canonique (listes triées par id) pour comparer deux états sans tenir compte de l'ordre.
+function canon(st) {
+  const o = {};
+  for (const k of Object.keys(st).sort()) o[k] = Array.isArray(st[k]) ? [...st[k]].sort((x, y) => String(x.id).localeCompare(String(y.id))) : st[k];
+  return JSON.stringify(o);
+}
+// Remplace l'état local par une version fusionnée reçue d'un autre appareil (sans la re-dater).
+function adoptState(next) {
+  S = Object.assign(DEF(), next, { settings: Object.assign(DEF().settings, next.settings) });
+  lastMap = snapMap(S); writeLocal(); applyTheme();
+  const dlg = document.getElementById('dlg');
+  if (!(dlg && dlg.open)) render();
+}
+window.Cap = { get: () => S, merge: mergeState, canon, adopt: adoptState, toast, render: () => render() };
 const UI = { task: today(), agMonth: ym(today()), agSel: today(), agMode: 'month', agYear: YEAR, mTab: 'month', mMonth: ym(today()) };
 
 /* ---------- Tâches ---------- */
@@ -454,7 +517,7 @@ function vWelcome() {
   <section class="card"><h2>Pour démarrer</h2>
     <label class="fld"><span>Ton prénom</span><input id="w-name" value="${esc(S.settings.name)}" placeholder="Prénom"></label>
     <p class="small mute">Le <b>modèle de départ</b> crée des objectifs 2027 (études, CDI, épargne de précaution, visites à ton fils), des routines quotidiennes et hebdomadaires, et un livret d’épargne. Tu pourras tout modifier ou supprimer.</p>
-    <div class="row"><button class="btn" data-a="start" data-tpl="1">Utiliser le modèle de départ</button><button class="btn ghost" data-a="start">Partir de zéro</button></div></section>
+    <div class="row"><button class="btn" data-a="start" data-tpl="1">Utiliser le modèle de départ</button><button class="btn ghost" data-a="start">Partir de zéro</button></div>${window.CAP_FIREBASE ? '<p class="small mute" style="margin:12px 0 6px">Déjà utilisé sur un autre appareil ?</p><button class="btn ghost" data-a="signin">☁️ Récupérer mes données (connexion Google)</button>' : ''}</section>
   <section class="card small mute">🔒 Tes données restent sur cet appareil, rien n’est envoyé sur internet. Pense à faire une sauvegarde de temps en temps (Réglages → Exporter).</section>`;
 }
 function seedTemplate() {
@@ -660,6 +723,16 @@ function vPlan() {
       <li>Ordre de priorité : matelas de sécurité (3 mois) → investir long terme (PEA / assurance-vie).</li></ol></section>`;
 }
 
+function syncCard() {
+  const st = window.CapSync && window.CapSync.state ? window.CapSync.state() : { status: 'loading' };
+  const ago = st.last ? new Date(st.last).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  let body;
+  if (st.status === 'noconfig') body = '<p class="small mute">La synchronisation n’est pas encore configurée.</p>';
+  else if (st.status === 'unavailable' || st.status === 'loading') body = `<p class="small mute">${st.status === 'loading' ? 'Chargement…' : 'Service de synchronisation injoignable (pas de connexion ?). Tes données restent sur cet appareil.'}</p>`;
+  else if (!st.user) body = `<p class="small mute">Connecte-toi avec ton compte Google sur chaque appareil (téléphone, ordinateur…) : tes données seront les mêmes partout et mises à jour en quelques secondes.</p><button class="btn sm" data-a="signin">Se connecter avec Google</button>`;
+  else body = `<p class="small">Connecté : <b>${esc(st.user)}</b><br>${st.status === 'error' ? `<span class="pill bad">Erreur</span> ${esc(st.error || '')}` : st.status === 'offline' ? '<span class="pill warn">Hors connexion</span> synchronisation au retour du réseau' : `<span class="pill ok">Synchronisé</span>${ago ? ' à ' + ago : ''}`}</p><div class="row"><button class="btn sm ghost" data-a="syncnow">Synchroniser maintenant</button><button class="btn sm ghost" data-a="signout">Se déconnecter</button></div>`;
+  return `<section class="card"><h2>☁️ Synchronisation entre appareils</h2>${body}</section>`;
+}
 function vSettings() {
   const st = S.settings, perm = 'Notification' in window ? Notification.permission : 'unsupported';
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -674,6 +747,7 @@ function vSettings() {
       <div class="row">${st.notif && perm === 'granted' ? '<button class="btn sm ghost" data-a="noff">Désactiver</button><button class="btn sm ghost" data-a="ntest">Tester</button>' : '<button class="btn sm" data-a="non">Activer les notifications</button>'}</div>
       <p class="small mute">⚠️ Une appli web envoie ses rappels quand elle est ouverte ou en arrière-plan récent. Pour des alarmes 100 % fiables même téléphone verrouillé, <b>exporte ton agenda</b> ci-dessous et importe-le dans Google Agenda / Calendrier iPhone : chaque rappel y devient une alarme.</p>
       ${!standalone ? '<p class="small mute">📱 Installe l’appli : Android/Chrome → menu ⋮ → « Installer l’application ». iPhone/Safari → Partager → « Sur l’écran d’accueil » (obligatoire sur iPhone pour les notifications).</p>' : ''}</section>
+    ${syncCard()}
     <section class="card"><h2>📆 Exporter vers mon agenda</h2><p class="small mute">Fichier .ics avec tes événements, voyages, routines horaires, versements d’épargne, charges fixes et échéances d’objectifs, avec alarmes.</p>
       <button class="btn sm" data-a="ics">Télécharger cap2027.ics</button></section>
     <section class="card"><h2>💾 Sauvegarde</h2><p class="small mute">Tes données sont uniquement sur cet appareil. Exporte une sauvegarde régulièrement (et pour passer sur un autre téléphone).</p>
@@ -955,6 +1029,9 @@ const ACT = {
     save(); render();
   },
   ai: () => aiBudget(),
+  signin: () => window.CapSync && window.CapSync.signIn(),
+  signout: () => { if (confirm('Se déconnecter ? Les données restent sur cet appareil mais ne seront plus synchronisées.')) window.CapSync && window.CapSync.signOut(); },
+  syncnow: () => window.CapSync && window.CapSync.push(true),
   aicopy: async () => {
     const ctx = aiContext();
     if (!ctx.revenus_du_mois.length && !ctx.revenu_moyen_estime) { alert('Ajoute d’abord tes revenus du mois (ou ton salaire dans les revenus fixes).'); return; }
