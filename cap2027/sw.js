@@ -1,5 +1,5 @@
 /* Cap 2027 — service worker : hors connexion + affichage des notifications. */
-var CACHE = "cap2027-v3";
+var CACHE = "cap2027-v4";
 var CORE = ["./", "index.html", "app.css", "app.js", "icon.svg", "icon-192.png", "icon-512.png", "badge-96.png", "manifest.webmanifest"];
 
 self.addEventListener("install", function (e) {
@@ -13,7 +13,7 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
-  e.respondWith(fetch(req).then(function (res) {
+  e.respondWith(fetch(req, { cache: "no-cache" }).then(function (res) {
     var copy = res.clone();
     caches.open(CACHE).then(function (c) { c.put(req, copy); });
     return res;

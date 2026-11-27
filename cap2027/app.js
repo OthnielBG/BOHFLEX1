@@ -2,7 +2,7 @@
 /* Cap 2027 — objectifs, tâches, agenda, voyages, budget, épargne.
    Toutes les données restent dans le navigateur (localStorage). Aucune dépendance. */
 
-const KEY = 'cap2027-v1', YEAR = 2027;
+const KEY = 'cap2027-v1', YEAR = 2027, VERSION = '1.4';
 try { localStorage.removeItem('cap2027-data'); } catch (e) { /* données de test de la version précédente */ }
 
 /* ---------- Référentiels ---------- */
@@ -679,7 +679,7 @@ function vSettings() {
     <section class="card"><h2>💾 Sauvegarde</h2><p class="small mute">Tes données sont uniquement sur cet appareil. Exporte une sauvegarde régulièrement (et pour passer sur un autre téléphone).</p>
       <div class="row"><button class="btn sm" data-a="exp">Exporter (JSON)</button><label class="btn sm ghost">Importer<input type="file" id="imp" accept="application/json,.json" hidden></label></div></section>
     <section class="card"><h2>🧹 Données</h2><div class="row"><button class="btn sm ghost" data-a="tpl">Ajouter le modèle de départ</button><button class="btn sm danger" data-a="wipe">Tout effacer</button></div></section>
-    <p class="small mute" style="text-align:center">Cap 2027 · données locales · aucune connexion requise</p>`;
+    <p class="small mute" style="text-align:center">Cap 2027 · version ${VERSION} · données locales</p>`;
 }
 
 /* ---------- Notifications ---------- */
@@ -1052,5 +1052,5 @@ setInterval(checkReminders, 30000);
 // Changement de jour pendant que l'appli reste ouverte
 let dayShown = today();
 setInterval(() => { if (today() !== dayShown) { if (UI.task === dayShown) UI.task = today(); dayShown = today(); render(); } }, 60000);
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
